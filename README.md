@@ -6,7 +6,7 @@ The purpose of this extension is:
 * For end-users of ableC, to provide a general mechanism of type polymorphism
 * For extension writers, to allow for extensions (e.g. vector) that utilize a large amount of static,
 type-dependant code to be able to write this in a header file
-* As a demonstration of the the use of lifting, substituion, and extension of the env with new
+* As a demonstration of the the use of lifting, substitution, and extension of the env with new
 namespaces.  
 
 ### Template struct declaration

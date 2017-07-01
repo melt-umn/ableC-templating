@@ -5,17 +5,5 @@ grammar well_definedness;
    well-definedness analysis.
  -}
 
-import edu:umn:cs:melt:ableC:concretesyntax as cst;
-import edu:umn:cs:melt:ableC:drivers:parseAndPrint;
-import edu:umn:cs:melt:exts:ableC:skeleton;
-
-parser extendedParser :: cst:Root {
-  edu:umn:cs:melt:ableC:concretesyntax;
-  edu:umn:cs:melt:exts:ableC:templating;
-} 
-
-function main
-IOVal<Integer> ::= args::[String] io_in::IO
-{
-  return ioval(io_in,0);
-}
+import edu:umn:cs:melt:ableC:host;
+import edu:umn:cs:melt:exts:ableC:templating;
