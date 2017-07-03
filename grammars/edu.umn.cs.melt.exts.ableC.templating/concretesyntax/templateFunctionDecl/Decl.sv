@@ -13,9 +13,6 @@ imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 
--- Spurious import, to trigger the tests on build.
-import edu:umn:cs:melt:exts:ableC:templating:mda_test;
-
 concrete production templateFunctionDecl_c
 top::ExternalDeclaration_c ::= Template_t params::TemplateParameters_c '>' dcl::TemplateInitialFunctionDefinition_c s::CompoundStatement_c
 {

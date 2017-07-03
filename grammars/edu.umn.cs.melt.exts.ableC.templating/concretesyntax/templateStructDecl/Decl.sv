@@ -15,9 +15,6 @@ exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructKeyword;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:maybeAttributes;
 
--- Spurious import, to trigger the tests on build.
-import edu:umn:cs:melt:exts:ableC:templating:mda_test;
-
 concrete production templateStructDecl_c
 top::ExternalDeclaration_c ::= Template_t params::TemplateParameters_c '>' TemplateStruct_t maa::MaybeAttributes_c id::Identifier_t '{' ss::StructDeclarationList_c '}'  ';'
 { 

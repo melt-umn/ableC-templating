@@ -12,9 +12,6 @@ imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 
--- Spurious import, to trigger the tests on build.
-import edu:umn:cs:melt:exts:ableC:templating:mda_test;
-
 marking terminal Using_t 'using' lexer classes {Ckeyword};
 
 concrete production usingDeclaration_c
