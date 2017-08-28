@@ -23,11 +23,11 @@ template treemap<k, v> put(template treemap<k, v> map, k key, v value) {
     return res;
   }
   else if (key < map->key) {
-    map->left = template put<k, v>(map->left, key, value);
+    map->left = inst put<k, v>(map->left, key, value);
     return map;
   }
   else if (key > map->key) {
-    map->right = template put<k, v>(map->right, key, value);
+    map->right = inst put<k, v>(map->right, key, value);
     return map;
   }
   else {
@@ -44,10 +44,10 @@ v get(template treemap<k, v> map, k key) {
     exit(1);
   }
   else if (key < map->key) {
-    return template get<k, v>(map->left, key);
+    return inst get<k, v>(map->left, key);
   }
   else if (key > map->key) {
-    return template get<k, v>(map->right, key);
+    return inst get<k, v>(map->right, key);
   }
   else {
     return map->value;
@@ -60,10 +60,10 @@ bool contains(template treemap<k, v> map, k key) {
     return false;
   }
   else if (key < map->key) {
-    return template contains<k, v>(map->left, key);
+    return inst contains<k, v>(map->left, key);
   }
   else if (key > map->key) {
-    return template contains<k, v>(map->right, key);
+    return inst contains<k, v>(map->right, key);
   }
   else {
     return true;
@@ -72,20 +72,20 @@ bool contains(template treemap<k, v> map, k key) {
 
 int main() {
   template treemap<int, const char*> m = NULL;
-  m = template put<int, const char*>(m, 2, " ");
-  m = template put<int, const char*>(m, 0, "Hello");
-  m = template put<int, const char*>(m, 3, "World");
-  m = template put<int, const char*>(m, 1, ",");
-  m = template put<int, const char*>(m, 5, "\n");
-  m = template put<int, const char*>(m, 4, "!");
+  m = inst put<int, const char*>(m, 2, " ");
+  m = inst put<int, const char*>(m, 0, "Hello");
+  m = inst put<int, const char*>(m, 3, "World");
+  m = inst put<int, const char*>(m, 1, ",");
+  m = inst put<int, const char*>(m, 5, "\n");
+  m = inst put<int, const char*>(m, 4, "!");
 
   for (unsigned i = 0; i < 6; i++) {
-    printf("%s", template get<int, const char*>(m, i));
+    printf("%s", inst get<int, const char*>(m, i));
   }
 
-  if (!template contains<int, const char*>(m, 3))
+  if (!inst contains<int, const char*>(m, 3))
     return 2;
-  else if (template contains<int, const char*>(m, 17))
+  else if (inst contains<int, const char*>(m, 17))
     return 3;
   else
     return 0;

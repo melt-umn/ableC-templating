@@ -18,6 +18,6 @@ int main() {
   template loc<float> c = {1.2, 3.4};
   template loc<float> d = {5.6, 7.8};
 
-  printf("%d\n", template distance<int>(a, b));
-  printf("%f\n", template distance<float>(c, d));
+  printf("%d\n", inst distance<int>(a, b));
+  printf("%f\n", inst distance<float>(c, d));
 }
