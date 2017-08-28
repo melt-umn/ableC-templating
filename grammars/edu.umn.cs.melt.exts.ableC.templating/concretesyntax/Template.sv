@@ -17,11 +17,12 @@ exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationExpr;
 
 -- Doesn't really belong in any spesific subgrammar, only conflicts when composing
 -- instantiationExpr and instantiationTypeExpr
-disambiguate TemplateIdentifier_t, TemplateTypeName_t
-{
-  pluck
-    case lookupBy(stringEq, substring(0, length(lexeme) - 1, lexeme), head(context)) of
-    | just(lh:typenameType_c()) -> TemplateTypeName_t
-    | _ -> TemplateIdentifier_t
-    end;
-}
+--disambiguate TemplateIdentifier_t, TemplateTypeName_t
+--{
+--  pluck
+--    TemplateTypeName_t;
+----    case lookupBy(stringEq, substring(0, length(lexeme) - 1, lexeme), head(context)) of
+----    | just(lh:typenameType_c()) -> TemplateTypeName_t
+----    | _ -> TemplateIdentifier_t
+----    end;
+--}
