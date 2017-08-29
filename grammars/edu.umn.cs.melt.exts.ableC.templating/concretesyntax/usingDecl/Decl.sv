@@ -4,6 +4,7 @@ imports silver:langutil;
 
 imports edu:umn:cs:melt:ableC:concretesyntax;
 imports edu:umn:cs:melt:ableC:concretesyntax:lexerHack as lh;
+imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:lexerHack as lh;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
@@ -21,5 +22,5 @@ top::ExternalDeclaration_c ::= 'using' id::Identifier_t '<' params::TemplatePara
 }
 action {
   context = lh:closeScope(context); -- Opened by TemplateDecl_c
-  context = lh:addTypenamesToScope([ast:fromId(id)], context);
+  context = lh:addTemplateTypenamesToScope([ast:fromId(id)], context);
 }
