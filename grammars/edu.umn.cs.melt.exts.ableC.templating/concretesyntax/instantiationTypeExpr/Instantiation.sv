@@ -8,12 +8,10 @@ imports edu:umn:cs:melt:ableC:concretesyntax;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
-
---marking terminal TemplateTypeName_t 'template' lexer classes {Ckeyword};
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
 
 concrete production templateTypedef_c
-top::TypeSpecifier_c ::= JustTemplate_t ty::TypeName_t '<' params::TypeNames_c '>'
+top::TypeSpecifier_c ::= 'inst' ty::TypeName_t '<' params::TypeNames_c '>'
 {
   top.realTypeSpecifiers = [templateTypedefTypeExpr(top.givenQualifiers, fromTy(ty), params.ast)];
   top.preTypeSpecifiers = []; 

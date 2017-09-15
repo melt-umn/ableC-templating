@@ -10,13 +10,13 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
-imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
-imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructKeyword;
-imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:maybeAttributes;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructKeyword;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:maybeAttributes;
 
 concrete production templateStructForwardDecl_c
-top::ExternalDeclaration_c ::= JustTemplate_t '<' params::TemplateParameters_c '>' TemplateStruct_t
+top::ExternalDeclaration_c ::= 'template' '<' params::TemplateParameters_c '>' TemplateStruct_t
 maa::MaybeAttributes_c
 id::Identifier_t ';'
 { 

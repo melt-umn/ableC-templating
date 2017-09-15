@@ -10,7 +10,7 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 
 marking terminal Using_t 'using' lexer classes {Ckeyword};
 
