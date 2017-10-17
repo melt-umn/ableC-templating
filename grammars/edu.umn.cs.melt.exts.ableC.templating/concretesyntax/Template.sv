@@ -5,7 +5,7 @@ imports silver:langutil;
 imports edu:umn:cs:melt:ableC:concretesyntax;
 imports edu:umn:cs:melt:ableC:concretesyntax:lexerHack as lh;
 
-imports edu:umn:cs:melt:ableC:abstractsyntax as ast;
+imports edu:umn:cs:melt:ableC:abstractsyntax:host as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructForwardDecl;

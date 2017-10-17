@@ -101,7 +101,7 @@ top::Decl ::= n::Name ts::TypeNames
   local fwrd::Decls =
     foldDecl([
       decls(ts.unusedTypedefTrans),
-      subDecl(
+      substDecl(
         nameSubstitution(n.name, name(mangledName, location=builtin)) ::
           zipWith(
             typedefSubstitution,
@@ -144,7 +144,7 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
   local fwrd::Decls =
     foldDecl([
       decls(ts.unusedTypedefTrans),
-      subDecl(
+      substDecl(
         nameSubstitution(n.name, name(mangledName, location=builtin)) ::
           refIdSubstitution(s"edu:umn:cs:melt:exts:ableC:templating:${n.name}", mangledRefId) ::
             zipWith(

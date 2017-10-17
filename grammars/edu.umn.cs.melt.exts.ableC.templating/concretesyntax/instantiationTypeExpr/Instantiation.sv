@@ -2,7 +2,7 @@ grammar edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeEx
 
 imports silver:langutil only ast;
 
-imports edu:umn:cs:melt:ableC:abstractsyntax;
+imports edu:umn:cs:melt:ableC:abstractsyntax:host;
 imports edu:umn:cs:melt:ableC:concretesyntax;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;

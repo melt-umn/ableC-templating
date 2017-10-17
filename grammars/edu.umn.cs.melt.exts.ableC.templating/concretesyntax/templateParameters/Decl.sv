@@ -5,7 +5,7 @@ imports silver:langutil;
 imports edu:umn:cs:melt:ableC:concretesyntax;
 imports edu:umn:cs:melt:ableC:concretesyntax:lexerHack as lh;
 
-imports edu:umn:cs:melt:ableC:abstractsyntax as ast;
+imports edu:umn:cs:melt:ableC:abstractsyntax:host as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 -- Seperate nonterminal from Names_c so that we can open a scope and add newly defined parameter
