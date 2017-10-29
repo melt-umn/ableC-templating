@@ -1,7 +1,5 @@
 grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-imports silver:util:raw:treemap as tm;
-
 synthesized attribute templateParams::[Name];
 synthesized attribute decl::Decl;
 synthesized attribute isItemValue::Boolean;
@@ -31,28 +29,28 @@ top::TemplateItem ::=
   top.isItemForwardDecl = false;
 }
 
-synthesized attribute templates::Scope<TemplateItem> occurs on Env;
+synthesized attribute templates::Scopes<TemplateItem> occurs on Env;
 synthesized attribute templateContribs::Contribs<TemplateItem> occurs on Defs, Def;
 
 aspect production emptyEnv_i
 top::Env ::=
 {
-  top.templates = [tm:empty(compareString)];
+  top.templates = emptyScope();
 }
 aspect production addEnv_i
 top::Env ::= d::Defs  e::Decorated Env
 {
-  top.templates = augmentGlobalScope_i(gd.templateContribs, augmentScope_i(d.templateContribs, e.templates));
+  top.templates = addGlobalScope(gd.templateContribs, addScope(d.templateContribs, e.templates));
 }
-aspect production openScope_i
+aspect production openEnvScope_i
 top::Env ::= e::Decorated Env
 {
-  top.templates = tm:empty(compareString) :: e.templates;
+  top.templates = openScope(e.templates);
 }
 aspect production globalEnv_i
 top::Env ::= e::Decorated Env
 {
-  top.templates = [last(e.templates)];
+  top.templates = globalScope(e.templates);
 }
 
 aspect production nilDefs
@@ -81,7 +79,7 @@ top::Def ::= s::String  t::TemplateItem
 function lookupTemplate
 [TemplateItem] ::= n::String  e::Decorated Env
 {
-  return readScope_i(n, e.templates);
+  return lookupScope(n, e.templates);
 }
 
 synthesized attribute templateItem::Decorated TemplateItem occurs on Name;
