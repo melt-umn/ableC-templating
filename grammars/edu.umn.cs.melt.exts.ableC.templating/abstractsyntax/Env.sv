@@ -2,10 +2,9 @@ grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 synthesized attribute templateParams::[Name];
 synthesized attribute decl::Decl;
-synthesized attribute isItemValue::Boolean;
 synthesized attribute isItemForwardDecl::Boolean;
 
-nonterminal TemplateItem with templateParams, decl, sourceLocation, isItemValue, isItemTypedef, isItemForwardDecl;
+nonterminal TemplateItem with templateParams, decl, sourceLocation, isItemValue, isItemType, isItemForwardDecl;
 
 abstract production templateItem
 top::TemplateItem ::= isItemTypedef::Boolean isItemForwardDecl::Boolean sourceLocation::Location params::[Name] decl::Decl
@@ -14,7 +13,7 @@ top::TemplateItem ::= isItemTypedef::Boolean isItemForwardDecl::Boolean sourceLo
   top.decl = decl;
   top.sourceLocation = sourceLocation;
   top.isItemValue = !isItemTypedef;
-  top.isItemTypedef = isItemTypedef;
+  top.isItemType = isItemTypedef;
   top.isItemForwardDecl = isItemForwardDecl;
 }
 
@@ -25,7 +24,7 @@ top::TemplateItem ::=
   top.decl = decls(nilDecl());
   top.sourceLocation = builtin;
   top.isItemValue = false;
-  top.isItemTypedef = false;
+  top.isItemType = false;
   top.isItemForwardDecl = false;
 }
 

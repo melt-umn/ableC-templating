@@ -129,7 +129,7 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
     ts.errors ++
     if !null(n.templateLookupCheck)
     then n.templateLookupCheck
-    else if !templateItem.isItemTypedef
+    else if !templateItem.isItemType
     then [err(n.location, s"${n.name} is not a type")]
     else if ts.count != length(templateItem.templateParams)
     then [err(
