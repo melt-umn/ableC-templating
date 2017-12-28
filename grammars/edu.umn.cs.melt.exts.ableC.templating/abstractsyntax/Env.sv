@@ -41,7 +41,7 @@ top::Env ::= d::Defs  e::Decorated Env
 {
   top.templates = addGlobalScope(gd.templateContribs, addScope(d.templateContribs, e.templates));
 }
-aspect production openEnvScope_i
+aspect production openScopeEnv_i
 top::Env ::= e::Decorated Env
 {
   top.templates = openScope(e.templates);
