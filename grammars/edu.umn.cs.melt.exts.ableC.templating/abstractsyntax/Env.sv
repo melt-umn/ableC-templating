@@ -51,6 +51,11 @@ top::Env ::= e::Decorated Env
 {
   top.templates = globalScope(e.templates);
 }
+aspect production nonGlobalEnv_i
+top::Env ::= e::Decorated Env
+{
+  top.templates = nonGlobalScope(e.templates);
+}
 
 aspect production nilDefs
 top::Defs ::=
