@@ -6,16 +6,16 @@ template<k, v>
 struct treemap_s {
   k key;
   v value;
-  template treemap_s<k, v> *left;
-  template treemap_s<k, v> *right;
+  inst treemap_s<k, v> *left;
+  inst treemap_s<k, v> *right;
 };
 
-using treemap<k, v> = template treemap_s<k, v>*;
+using treemap<k, v> = inst treemap_s<k, v>*;
 
 template<k, v>
-template treemap<k, v> put(template treemap<k, v> map, k key, v value) {
+inst treemap<k, v> put(inst treemap<k, v> map, k key, v value) {
   if (map == NULL) {
-    template treemap<k, v> res = malloc(sizeof(template treemap_s<k, v>));
+    inst treemap<k, v> res = malloc(sizeof(inst treemap_s<k, v>));
     res->key = key;
     res->value = value;
     res->left = NULL;
@@ -38,7 +38,7 @@ template treemap<k, v> put(template treemap<k, v> map, k key, v value) {
 }
 
 template<k, v>
-v get(template treemap<k, v> map, k key) {
+v get(inst treemap<k, v> map, k key) {
   if (map == NULL) {
     fprintf(stderr, "Key not in map\n");
     exit(1);
@@ -55,7 +55,7 @@ v get(template treemap<k, v> map, k key) {
 }
 
 template<k, v>
-bool contains(template treemap<k, v> map, k key) {
+bool contains(inst treemap<k, v> map, k key) {
   if (map == NULL) {
     return false;
   }
@@ -71,7 +71,7 @@ bool contains(template treemap<k, v> map, k key) {
 }
 
 int main() {
-  template treemap<int, const char*> m = NULL;
+  inst treemap<int, const char*> m = NULL;
   m = inst put<int, const char*>(m, 2, " ");
   m = inst put<int, const char*>(m, 0, "Hello");
   m = inst put<int, const char*>(m, 3, "World");

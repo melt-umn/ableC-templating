@@ -2,9 +2,9 @@
 template<a>
 struct foo {
   a x;
-  template foo<int> *b;
+  inst foo<int> *b;
 };
 
 int main(int argc, char **argv) {
-  template foo<float> q;
+  inst foo<float> q;
 }
