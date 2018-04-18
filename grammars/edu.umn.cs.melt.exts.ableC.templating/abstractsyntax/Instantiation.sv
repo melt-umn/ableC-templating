@@ -12,7 +12,7 @@ top::Expr ::= n::Name ts::TypeNames
   decl.isTopLevel = true;
   decl.env = top.env;
   decl.returnType = nothing();
-
+  
   local localErrors::[Message] =
     if !null(decl.errors)
     then
@@ -21,7 +21,7 @@ top::Expr ::= n::Name ts::TypeNames
          s"In instantiation ${n.name}<${show(80, ppImplode(pp", ", ts.pps))}>",
          decl.errors)]
     else [];
-    
+  
   local fwrd::Expr =
     injectGlobalDeclsExpr(
       consDecl(decl, nilDecl()),
@@ -52,7 +52,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   decl.isTopLevel = true;
   decl.env = top.env;
   decl.returnType = nothing();
-
+  
   local localErrors::[Message] =
     if !null(decl.errors)
     then
@@ -61,7 +61,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
          s"In instantiation ${n.name}<${show(80, ppImplode(pp", ", ts.pps))}>",
          decl.errors)]
     else [];
-
+  
   local fwrd::BaseTypeExpr =
     injectGlobalDeclsTypeExpr(
       consDecl(decl, nilDecl()),
@@ -82,7 +82,7 @@ top::Decl ::= n::Name ts::TypeNames
   top.substituted = templateExprInstDecl(n, ts.substituted); -- Don't substitute n
   
   local templateItem::Decorated TemplateItem = n.templateItem;
-
+  
   local localErrors::[Message] =
     ts.errors ++
     if !null(n.templateLookupCheck)
@@ -101,14 +101,14 @@ top::Decl ::= n::Name ts::TypeNames
   local fwrd::Decls =
     foldDecl([
       decls(ts.unusedTypedefTrans),
-      subDecl(
+      substDecl(
         nameSubstitution(n.name, name(mangledName, location=builtin)) ::
           zipWith(
             typedefSubstitution,
             map((.name), templateItem.templateParams),
             map(directTypeExpr, ts.typereps)),
         templateItem.decl)]);
-
+  
   forwards to
     if !null(lookupValue(mangledName, top.env))
     then decls(nilDecl())
@@ -124,12 +124,12 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
   top.substituted = templateTypeExprInstDecl(q, n, ts.substituted); -- Don't substitute n
   
   local templateItem::Decorated TemplateItem = n.templateItem;
-
+  
   local localErrors::[Message] =
     ts.errors ++
     if !null(n.templateLookupCheck)
     then n.templateLookupCheck
-    else if !templateItem.isItemTypedef
+    else if !templateItem.isItemType
     then [err(n.location, s"${n.name} is not a type")]
     else if ts.count != length(templateItem.templateParams)
     then [err(
@@ -144,7 +144,7 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
   local fwrd::Decls =
     foldDecl([
       decls(ts.unusedTypedefTrans),
-      subDecl(
+      substDecl(
         nameSubstitution(n.name, name(mangledName, location=builtin)) ::
           refIdSubstitution(s"edu:umn:cs:melt:exts:ableC:templating:${n.name}", mangledRefId) ::
             zipWith(
@@ -152,7 +152,7 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
               map((.name), templateItem.templateParams),
               map(directTypeExpr, ts.typereps)),
         templateItem.decl)]);
-
+  
   forwards to
     if !null(lookupValue(mangledName, top.env))
     then decls(nilDecl())
