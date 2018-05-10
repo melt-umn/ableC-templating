@@ -16,7 +16,9 @@ exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructKeywo
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:maybeAttributes;
 
 concrete production templateStructForwardDecl_c
-top::ExternalDeclaration_c ::= Template_t params::TemplateParameters_c '>' TemplateStruct_t maa::MaybeAttributes_c id::Identifier_t ';'
+top::ExternalDeclaration_c ::= 'template' '<' params::TemplateParameters_c '>' TemplateStruct_t
+maa::MaybeAttributes_c
+id::Identifier_t ';'
 { 
   top.ast = templateStructForwardDecl(params.ast, maa.ast, ast:fromId(id));
 }

@@ -12,3 +12,4 @@ concrete productions top::MaybeAttributes_c
   { top.ast = aa.ast; }
 | 
   { top.ast = ast:nilAttribute(); }
+

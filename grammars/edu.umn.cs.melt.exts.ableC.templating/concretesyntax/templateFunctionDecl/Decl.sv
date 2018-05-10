@@ -14,7 +14,7 @@ exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 
 concrete production templateFunctionDecl_c
-top::ExternalDeclaration_c ::= Template_t params::TemplateParameters_c '>' dcl::TemplateInitialFunctionDefinition_c s::CompoundStatement_c
+top::ExternalDeclaration_c ::= 'template' '<' params::TemplateParameters_c '>' dcl::TemplateInitialFunctionDefinition_c s::CompoundStatement_c
 {
   top.ast = templateFunctionDecl(params.ast, dcl.ast);
   dcl.givenStmt = s.ast;

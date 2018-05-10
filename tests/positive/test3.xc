@@ -7,21 +7,21 @@ struct loc {
   a y;
 };
 
-using locptr<a> = loc<a>*;
+using locptr<a> = inst loc<a>*;
 
 template<a>
-a distance(locptr<a> p, locptr<a> q) {
+a distance(inst locptr<a> p, inst locptr<a> q) {
   return (a)sqrt((p->x - q->x) * (p->x - q->x) + (p->y - q->y) * (p->y - q->y));
 }
 
 int main() {
-  loc<int> a = {1, 2};
-  loc<int> b = {3, 4};
-  loc<float> c = {1.2, 3.4};
-  loc<float> d = {5.6, 7.8};
+  inst loc<int> a = {1, 2};
+  inst loc<int> b = {3, 4};
+  inst loc<float> c = {1.2, 3.4};
+  inst loc<float> d = {5.6, 7.8};
 
-  int ab = distance<int>(&a, &b);
-  float cd = distance<float>(&c, &d);
+  int ab = inst distance<int>(&a, &b);
+  float cd = inst distance<float>(&c, &d);
 
   printf("%d\n", ab);
   printf("%f\n", cd);
