@@ -153,6 +153,8 @@ top::Decl ::= params::TypeParameters d::FunctionDecl
       | badFunctionDecl(msg) -> msg
       end;
   
+  local resultTypedefName::Name =
+    name(s"_template_result_${toString(genInt())}", location=builtin);
   local fwrd::Decl =
     case d of
       functionDecl(storage, fnquals, bty, mty, n, attrs, ds, body) -> 
@@ -161,12 +163,30 @@ top::Decl ::= params::TypeParameters d::FunctionDecl
             n.name,
             templateItem(
               false, false, d.sourceLocation, params.names,
-              functionDeclaration(
-                functionDecl(
-                  if !containsBy(storageClassEq, staticStorageClass(), storage)
-                  then staticStorageClass() :: storage
-                  else storage,
-                  fnquals, bty, mty, n, attrs, ds, body))))])
+              decls(
+                foldDecl([
+                  typedefDecls(
+                    nilAttribute(), bty,
+                    consDeclarator(
+                      declarator(resultTypedefName, baseTypeExpr(), nilAttribute(), nothingInitializer()),
+                      nilDeclarator())),
+                  variableDecls(
+                    if !containsBy(storageClassEq, staticStorageClass(), storage)
+                    then staticStorageClass() :: storage
+                    else storage,
+                    nilAttribute(),
+                    typedefTypeExpr(nilQualifier(), resultTypedefName),
+                    consDeclarator(
+                      declarator(n, mty, nilAttribute(), nothingInitializer()),
+                      nilDeclarator())),
+                  functionDeclaration(
+                    functionDecl(
+                      if !containsBy(storageClassEq, staticStorageClass(), storage)
+                      then staticStorageClass() :: storage
+                      else storage,
+                      fnquals,
+                      typedefTypeExpr(nilQualifier(), resultTypedefName),
+                      mty, n, attrs, ds, body))]))))])
     | badFunctionDecl(msg) -> decls(nilDecl())
     end;
   
