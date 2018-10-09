@@ -26,13 +26,13 @@ a deref(inst ptr<a> x) {
 }
 
 template<a>
-void delete(ptr<a> x) {
+void delete(inst ptr<a> x) {
   free(x.contents);
 }
 
 int main() {
-  ptr<ptr<int>> x = inst new<inst ptr<int>>(inst new<int>(42));
-  printf("%d\n", deref<int>(inst deref<inst ptr<int>>(x)));
+  inst ptr<inst ptr<int>> x = inst new<inst ptr<int>>(inst new<int>(42));
+  printf("%d\n", inst deref<int>(inst deref<inst ptr<int>>(x)));
   inst delete<int>(inst deref<inst ptr<int>>(x));
   inst delete<inst ptr<int>>(x);
 

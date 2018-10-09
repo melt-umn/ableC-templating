@@ -8,14 +8,16 @@ imports edu:umn:cs:melt:ableC:concretesyntax:lexerHack as lh;
 imports edu:umn:cs:melt:ableC:abstractsyntax:host as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
+imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
+
 -- Seperate nonterminal from Names_c so that we can open a scope and add newly defined parameter
 -- types to the context
-closed nonterminal TemplateParameters_c with location, ast<[ast:Name]>;
+closed nonterminal TemplateParameters_c with location, ast<TypeParameters>;
 
 concrete production templateParameters_c
 top::TemplateParameters_c ::= params::Names_c
 {
-  top.ast = params.ast;
+  top.ast = foldr(consTypeParameters, nilTypeParameters(), params.ast);
 }
 action {
   context = lh:addTypenamesToScope(params.ast, lh:openScope(context));

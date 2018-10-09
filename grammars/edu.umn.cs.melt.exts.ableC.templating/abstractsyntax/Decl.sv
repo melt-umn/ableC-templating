@@ -12,26 +12,22 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:substitution;
 global builtin::Location = builtinLoc("templating");
 
 abstract production templateTypeDecl
-top::Decl ::= params::[Name] n::Name ty::TypeName
+top::Decl ::= params::TypeParameters n::Name ty::TypeName
 {
-  top.pp = pp"using ${n.pp}<${ppImplode(text(", "), map((.pp), params))}> = ${ty.pp};";
-  top.substituted =
-    templateTypeDecl(
-      map(\ n::Name -> decorate n with {substitutions = top.substitutions;}.substituted, params),
-      n.substituted,
-      ty.substituted);
+  propagate substituted;
+  top.pp = pp"using ${n.pp}<${ppImplode(text(", "), params.pps)}> = ${ty.pp};";
   
   local localErrors::[Message] =
     if !top.isTopLevel
     then [err(n.location, "Template declarations must be global")]
-    else n.templateRedeclarationCheck ++ duplicateParameterCheck(params, []);
+    else n.templateRedeclarationCheck ++ params.errors;
   
   local fwrd::Decl =
     defsDecl([
       templateDef(
         n.name,
         templateItem(
-          true, false, n.location, params,
+          true, false, n.location, params.names,
           typedefDecls(
             nilAttribute(),
             ty.bty,
@@ -46,28 +42,24 @@ top::Decl ::= params::[Name] n::Name ty::TypeName
 }
 
 abstract production templateStructForwardDecl
-top::Decl ::= params::[Name] attrs::Attributes n::Name
+top::Decl ::= params::TypeParameters attrs::Attributes n::Name
 {
-  top.pp =
-    ppConcat([pp"template<", ppImplode(text(", "), map((.pp), params)), pp">", line(),
-              pp"struct ", ppAttributes(attrs), text(n.name), space(), semi()]);
-  top.substituted =
-    templateStructForwardDecl(
-      map(\ n::Name -> decorate n with {substitutions = top.substitutions;}.substituted, params),
-      attrs.substituted,
-      n.substituted);
+  propagate substituted;
+  top.pp = ppConcat([
+    pp"template<", ppImplode(text(", "), params.pps), pp">", line(),
+    pp"struct ", ppAttributes(attrs), text(n.name), space(), semi()]);
   
   local localErrors::[Message] =
     if !top.isTopLevel
     then [err(n.location, "Template declarations must be global")]
-    else n.templateRedeclarationCheck ++ duplicateParameterCheck(params, []);
+    else n.templateRedeclarationCheck ++ params.errors;
   
   local fwrd::Decl =
     defsDecl([
       templateDef(
         n.name,
         templateItem(
-          true, true, n.location, params,
+          true, true, n.location, params.names,
           -- maybeDecl {typedef __attribute__((refId("edu:umn:cs:melt:exts:ableC:templating:__name__"))) struct __name__ __name__;}
           maybeValueDecl(
             n.name,
@@ -94,30 +86,25 @@ top::Decl ::= params::[Name] attrs::Attributes n::Name
 }
 
 abstract production templateStructDecl
-top::Decl ::= params::[Name] attrs::Attributes n::Name dcls::StructItemList
+top::Decl ::= params::TypeParameters attrs::Attributes n::Name dcls::StructItemList
 {
-  top.pp =
-    ppConcat([pp"template<", ppImplode(text(", "), map((.pp), params)), pp">", line(),
-              pp"struct ", ppAttributes(attrs), text(n.name), space(),
-              braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
-  top.substituted =
-    templateStructDecl(
-      map(\ n::Name -> decorate n with {substitutions = top.substitutions;}.substituted, params),
-      attrs.substituted,
-      n.substituted,
-      dcls.substituted);
+  propagate substituted;
+  top.pp = ppConcat([
+    pp"template<", ppImplode(text(", "), params.pps), pp">", line(),
+    pp"struct ", ppAttributes(attrs), text(n.name), space(),
+    braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
   
   local localErrors::[Message] =
     if !top.isTopLevel
     then [err(n.location, "Template declarations must be global")]
-    else n.templateRedeclarationCheck ++ duplicateParameterCheck(params, []);
+    else n.templateRedeclarationCheck ++ params.errors;
   
   local fwrd::Decl =
     defsDecl([
       templateDef(
         n.name,
         templateItem(
-          true, false, n.location, params,
+          true, false, n.location, params.names,
           decls(
             foldDecl([
               -- maybeDecl {typedef __attribute__((refId("edu:umn:cs:melt:exts:ableC:templating:__name__"))) struct __name__ __name__;}
@@ -152,21 +139,17 @@ top::Decl ::= params::[Name] attrs::Attributes n::Name dcls::StructItemList
 }
 
 abstract production templateFunctionDecl
-top::Decl ::= params::[Name] d::FunctionDecl
+top::Decl ::= params::TypeParameters d::FunctionDecl
 {
-  top.pp =
-    ppConcat([pp"template<", ppImplode(text(", "), map((.pp), params)), pp">", line(), d.pp]);
-  top.substituted =
-    templateFunctionDecl(
-      map(\ n::Name -> decorate n with {substitutions = top.substitutions;}.substituted, params),
-      d.substituted);
+  propagate substituted;
+  top.pp = ppConcat([pp"template<", ppImplode(text(", "), params.pps), pp">", line(), d.pp]);
   
   local localErrors::[Message] =
     case d of
       functionDecl(_, _, _, _, n, _, _, _) -> 
         if !top.isTopLevel
         then [err(n.location, "Template declarations must be global")]
-        else n.templateRedeclarationCheck ++ duplicateParameterCheck(params, [])
+        else n.templateRedeclarationCheck ++ params.errors
       | badFunctionDecl(msg) -> msg
       end;
   
@@ -177,7 +160,7 @@ top::Decl ::= params::[Name] d::FunctionDecl
           templateDef(
             n.name,
             templateItem(
-              false, false, d.sourceLocation, params,
+              false, false, d.sourceLocation, params.names,
               functionDeclaration(
                 functionDecl(
                   if !containsBy(storageClassEq, staticStorageClass(), storage)
@@ -193,19 +176,29 @@ top::Decl ::= params::[Name] d::FunctionDecl
     else fwrd;
 }
 
-function duplicateParameterCheck
-[Message] ::= params::[Name] seenNames::[String]
+synthesized attribute names::[String];
+
+nonterminal TypeParameters with pps, names, errors, substitutions, substituted<TypeParameters>;
+
+abstract production consTypeParameters
+top::TypeParameters ::= h::Name t::TypeParameters
 {
-  return
-    case params of
-      [] -> []
-    | h :: t ->
-      if containsBy(stringEq, h.name, seenNames)
-      then
-        err(h.location, "Duplicate template parameter " ++ h.name) ::
-          duplicateParameterCheck(t, seenNames)
-      else duplicateParameterCheck(t, h.name :: seenNames)
-    end;
+  propagate substituted;
+  top.pps = h.pp :: t.pps;
+  top.names = h.name :: t.names;
+  top.errors :=
+    (if containsBy(stringEq, h.name, t.names)
+     then [err(h.location, "Duplicate template parameter " ++ h.name)]
+     else []) ++ t.errors;
+}
+
+abstract production nilTypeParameters
+top::TypeParameters ::=
+{
+  propagate substituted;
+  top.pps = [];
+  top.names = [];
+  top.errors := [];
 }
 
 function storageClassEq

@@ -105,7 +105,7 @@ top::Decl ::= n::Name ts::TypeNames
         nameSubstitution(n.name, name(mangledName, location=builtin)) ::
           zipWith(
             typedefSubstitution,
-            map((.name), templateItem.templateParams),
+            templateItem.templateParams,
             map(directTypeExpr, ts.typereps)),
         templateItem.decl)]);
   
@@ -149,7 +149,7 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
           refIdSubstitution(s"edu:umn:cs:melt:exts:ableC:templating:${n.name}", mangledRefId) ::
             zipWith(
               typedefSubstitution,
-              map((.name), templateItem.templateParams),
+              templateItem.templateParams,
               map(directTypeExpr, ts.typereps)),
         templateItem.decl)]);
   
