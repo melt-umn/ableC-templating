@@ -14,6 +14,7 @@ top::Expr ::= n::Name ts::TypeNames
   decl.returnType = nothing();
   
   local localErrors::[Message] =
+    ts.errors ++
     if !null(decl.errors)
     then
       [nested(
@@ -30,7 +31,7 @@ top::Expr ::= n::Name ts::TypeNames
   
   forwards to
     if containsErrorType(ts.typereps)
-    then errorExpr([], location=top.location)
+    then errorExpr(ts.errors, location=top.location)
     else mkErrorCheck(localErrors, fwrd);
 }
 
@@ -54,6 +55,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   decl.returnType = nothing();
   
   local localErrors::[Message] =
+    ts.errors ++
     if !null(decl.errors)
     then
       [nested(
@@ -69,7 +71,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   
   forwards to
     if containsErrorType(ts.typereps)
-    then errorTypeExpr([])
+    then errorTypeExpr(ts.errors)
     else if !null(localErrors)
     then errorTypeExpr(localErrors)
     else fwrd;

@@ -30,6 +30,8 @@ void delete(inst ptr<a> x) {
   free(x.contents);
 }
 
+int asdf;
+
 int main() {
   inst ptr<inst ptr<int>> x = inst new<inst ptr<int>>(inst new<int>(42));
   printf("%d\n", inst deref<int>(inst deref<inst ptr<int>>(x)));
@@ -39,4 +41,6 @@ int main() {
   typedef int foo;
   inst ptr<foo> y;
   inst delete<foo>(y);
+
+  inst ptr<asdf> z;
 }
