@@ -11,10 +11,10 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
-exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typeParameters;
 
 concrete production templateFunctionDecl_c
-top::Declaration_c ::= 'template' '<' params::TemplateParameters_c '>' dcl::TemplateInitialFunctionDefinition_c s::CompoundStatement_c
+top::Declaration_c ::= 'template' '<' params::TypeParameters_c '>' dcl::TemplateInitialFunctionDefinition_c s::CompoundStatement_c
 {
   top.ast = templateFunctionDecl(params.ast, dcl.ast);
   dcl.givenStmt = s.ast;

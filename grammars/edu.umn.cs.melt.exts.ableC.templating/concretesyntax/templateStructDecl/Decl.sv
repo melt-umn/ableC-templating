@@ -11,12 +11,12 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
-exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typeParameters;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructKeyword;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:maybeAttributes;
 
 concrete production templateStructDecl_c
-top::Declaration_c ::= 'template' '<' params::TemplateParameters_c '>' TemplateStruct_t
+top::Declaration_c ::= 'template' '<' params::TypeParameters_c '>' TemplateStruct_t
 maa::MaybeAttributes_c
 id::Identifier_t '{' ss::StructDeclarationList_c '}'  ';'
 {
