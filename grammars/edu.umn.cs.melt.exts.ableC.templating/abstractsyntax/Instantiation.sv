@@ -13,8 +13,9 @@ top::Expr ::= n::Name ts::TypeNames
   decl.env = top.env;
   decl.returnType = nothing();
   
-  local localErrors::[Message] =
-    ts.errors ++
+  local localErrors::[Message] = ts.errors ++ n.templateLookupCheck;
+  local instErrors::[Message] =
+    localErrors ++ 
     if !null(decl.errors)
     then
       [nested(
@@ -31,8 +32,8 @@ top::Expr ::= n::Name ts::TypeNames
   
   forwards to
     if containsErrorType(ts.typereps)
-    then errorExpr(ts.errors, location=top.location)
-    else mkErrorCheck(localErrors, fwrd);
+    then errorExpr(localErrors, location=top.location)
+    else mkErrorCheck(instErrors, fwrd);
 }
 
 abstract production templateTypedefTypeExpr
@@ -54,8 +55,9 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   decl.env = top.env;
   decl.returnType = nothing();
   
-  local localErrors::[Message] =
-    ts.errors ++
+  local localErrors::[Message] = ts.errors ++ n.templateLookupCheck;
+  local instErrors::[Message] =
+    localErrors ++ 
     if !null(decl.errors)
     then
       [nested(
@@ -71,9 +73,9 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   
   forwards to
     if containsErrorType(ts.typereps)
-    then errorTypeExpr(ts.errors)
-    else if !null(localErrors)
     then errorTypeExpr(localErrors)
+    else if !null(instErrors)
+    then errorTypeExpr(instErrors)
     else fwrd;
 }
 
