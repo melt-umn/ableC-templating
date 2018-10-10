@@ -33,7 +33,7 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       
       local bt :: ast:BaseTypeExpr =
         ast:figureOutTypeFromSpecifiers(ds.location, ds.typeQualifiers, ds.preTypeSpecifiers, ds.realTypeSpecifiers, ds.mutateTypeSpecifiers);
-
+      
       local specialSpecifiers :: ast:SpecialSpecifiers =
         foldr(ast:consSpecialSpecifier, ast:nilSpecialSpecifier(), ds.specialSpecifiers);
       

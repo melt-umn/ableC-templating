@@ -111,7 +111,7 @@ top::Decl ::= params::TypeParameters d::FunctionDecl
   
   local fwrd::Decl =
     case d of
-      functionDecl(storage, fnquals, bty, mty, n, attrs, ds, body) -> 
+    | functionDecl(_, _, _, _, n, _, _, _) -> 
         defsDecl([
           templateDef(
             n.name,
