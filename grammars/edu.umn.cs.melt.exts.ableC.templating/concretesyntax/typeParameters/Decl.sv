@@ -22,13 +22,3 @@ top::TypeParameters_c ::= params::Names_c
 action {
   context = lh:addTypenamesToScope(params.ast, lh:openScope(context));
 }
-
-closed nonterminal Names_c with location, ast<[ast:Name]>;
-
-concrete productions top::Names_c
-| h::Identifier_t ',' t::Names_c
-  { top.ast = ast:fromId(h) :: t.ast; }
-| h::Identifier_t
-  { top.ast = [ast:fromId(h)]; }
-| 
-  { top.ast = []; }
