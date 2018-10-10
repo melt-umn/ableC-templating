@@ -23,8 +23,8 @@ top::TemplateItem ::=
   top.templateParams = [];
   top.decl = decls(nilDecl());
   top.sourceLocation = builtin;
-  top.isItemValue = false;
-  top.isItemType = false;
+  top.isItemValue = true;
+  top.isItemType = true;
   top.isItemForwardDecl = false;
 }
 

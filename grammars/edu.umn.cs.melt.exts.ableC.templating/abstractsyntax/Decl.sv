@@ -41,50 +41,6 @@ top::Decl ::= params::TypeParameters n::Name ty::TypeName
     else fwrd;
 }
 
-abstract production templateStructForwardDecl
-top::Decl ::= params::TypeParameters attrs::Attributes n::Name
-{
-  propagate substituted;
-  top.pp = ppConcat([
-    pp"template<", ppImplode(text(", "), params.pps), pp">", line(),
-    pp"struct ", ppAttributes(attrs), text(n.name), space(), semi()]);
-  
-  local localErrors::[Message] =
-    if !top.isTopLevel
-    then [err(n.location, "Template declarations must be global")]
-    else n.templateRedeclarationCheck ++ params.errors;
-  
-  local fwrd::Decl =
-    defsDecl([
-      templateDef(
-        n.name,
-        templateItem(
-          true, true, n.location, params.names,
-          -- maybeDecl {typedef __attribute__((refId("edu:umn:cs:melt:exts:ableC:templating:__name__"))) struct __name__ __name__;}
-          maybeValueDecl(
-            n.name,
-            typedefDecls(
-              consAttribute(
-                gccAttribute(
-                  consAttrib(
-                    appliedAttrib(
-                      attribName(name("refId", location=builtin)),
-                      consExpr(
-                        stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${n.name}\"", location=builtin),
-                        nilExpr())),
-                    nilAttrib())),
-                attrs),
-              tagReferenceTypeExpr(nilQualifier(), structSEU(), n),
-              consDeclarator(
-                declarator(n, baseTypeExpr(), nilAttribute(), nothingInitializer()),
-                nilDeclarator())))))]);
-  
-  forwards to
-    if !null(localErrors)
-    then decls(consDecl(warnDecl(localErrors), consDecl(fwrd, nilDecl())))
-    else fwrd;
-}
-
 abstract production templateStructDecl
 top::Decl ::= params::TypeParameters attrs::Attributes n::Name dcls::StructItemList
 {
