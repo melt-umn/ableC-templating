@@ -15,7 +15,7 @@ exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 marking terminal Using_t 'using' lexer classes {Ckeyword};
 
 concrete production usingDeclaration_c
-top::ExternalDeclaration_c ::= 'using' id::Identifier_t '<' params::TemplateParameters_c '>' '=' ty::TypeName_c ';'
+top::Declaration_c ::= 'using' id::Identifier_t '<' params::TemplateParameters_c '>' '=' ty::TypeName_c ';'
 {
   top.ast = templateTypeDecl(params.ast, ast:fromId(id), ty.ast);
 }
