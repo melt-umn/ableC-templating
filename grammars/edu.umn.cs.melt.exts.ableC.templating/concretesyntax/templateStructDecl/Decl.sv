@@ -18,11 +18,11 @@ exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:maybeAttributes;
 concrete production templateStructDecl_c
 top::Declaration_c ::= 'template' '<' params::TypeParameters_c '>' TemplateStruct_t
 maa::MaybeAttributes_c
-id::Identifier_t '{' ss::StructDeclarationList_c '}'  ';'
+id::Identifier_c '{' ss::StructDeclarationList_c '}'  ';'
 {
-  top.ast = templateStructDecl(params.ast, maa.ast, ast:fromId(id), ast:foldStructItem(ss.ast));
+  top.ast = templateStructDecl(params.ast, maa.ast, id.ast, ast:foldStructItem(ss.ast));
 }
 action {
   context = lh:closeScope(context); -- Opened by TemplateParams_c
-  context = lh:addTypenamesToScope([ast:fromId(id)], context);
+  context = lh:addTypenamesToScope([id.ast], context);
 }
