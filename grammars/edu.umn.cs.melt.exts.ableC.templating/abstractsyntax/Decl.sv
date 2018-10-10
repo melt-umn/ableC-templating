@@ -153,8 +153,6 @@ top::Decl ::= params::TypeParameters d::FunctionDecl
       | badFunctionDecl(msg) -> msg
       end;
   
-  local resultTypedefName::Name =
-    name(s"_template_result_${toString(genInt())}", location=builtin);
   local fwrd::Decl =
     case d of
       functionDecl(storage, fnquals, bty, mty, n, attrs, ds, body) -> 
@@ -163,30 +161,7 @@ top::Decl ::= params::TypeParameters d::FunctionDecl
             n.name,
             templateItem(
               false, false, d.sourceLocation, params.names,
-              decls(
-                foldDecl([
-                  typedefDecls(
-                    nilAttribute(), bty,
-                    consDeclarator(
-                      declarator(resultTypedefName, baseTypeExpr(), nilAttribute(), nothingInitializer()),
-                      nilDeclarator())),
-                  variableDecls(
-                    if !containsBy(storageClassEq, staticStorageClass(), storage)
-                    then staticStorageClass() :: storage
-                    else storage,
-                    nilAttribute(),
-                    typedefTypeExpr(nilQualifier(), resultTypedefName),
-                    consDeclarator(
-                      declarator(n, mty, nilAttribute(), nothingInitializer()),
-                      nilDeclarator())),
-                  functionDeclaration(
-                    functionDecl(
-                      if !containsBy(storageClassEq, staticStorageClass(), storage)
-                      then staticStorageClass() :: storage
-                      else storage,
-                      fnquals,
-                      typedefTypeExpr(nilQualifier(), resultTypedefName),
-                      mty, n, attrs, ds, body))]))))])
+              protoFunctionDeclaration(d)))])
     | badFunctionDecl(msg) -> decls(nilDecl())
     end;
   
@@ -194,6 +169,61 @@ top::Decl ::= params::TypeParameters d::FunctionDecl
     if !null(localErrors)
     then decls(consDecl(warnDecl(localErrors), consDecl(fwrd, nilDecl())))
     else fwrd;
+}
+
+abstract production protoFunctionDeclaration
+top::Decl ::= decl::FunctionDecl
+{
+  propagate substituted;
+  top.pp = pp"proto ${decl.pp}";
+  forwards to decl.withProto;
+}
+
+synthesized attribute withProto::Decl occurs on FunctionDecl;
+
+aspect production functionDecl
+top::FunctionDecl ::= storage::[StorageClass]  fnquals::SpecialSpecifiers  bty::BaseTypeExpr mty::TypeModifierExpr  n::Name  attrs::Attributes  ds::Decls  body::Stmt
+{
+  local newStorageClasses::[StorageClass] =
+    if !containsBy(storageClassEq, staticStorageClass(), storage)
+    then staticStorageClass() :: storage
+    else storage;
+  top.withProto =
+    decls(
+      foldDecl([
+        variableDecls(
+          newStorageClasses, nilAttribute(), bty,
+          consDeclarator(
+            declarator(n, mty, nilAttribute(), nothingInitializer()),
+            nilDeclarator())),
+        functionDeclaration(
+          functionDecl(
+            newStorageClasses, fnquals, directTypeExpr(bty.typerep),
+            case mty of
+            | functionTypeExprWithArgs(result, params, variadic, q) ->
+              functionTypeExprWithArgs(result, directTypeParameters(params), variadic, q)
+            | functionTypeExprWithoutArgs(_, _, _) -> mty
+            | _ -> error("mty should always be a functionTypeExpr")
+            end, n, attrs, ds, body))]));
+}
+
+aspect production badFunctionDecl
+top::FunctionDecl ::= msg::[Message]
+{
+  top.withProto = functionDeclaration(top);
+}
+
+function directTypeParameters
+Parameters ::= p::Decorated Parameters
+{
+  return
+    case p of
+      consParameters(parameterDecl(storage, bty, mty, n, attrs), t) ->
+        consParameters(
+          parameterDecl(storage, directTypeExpr(mty.typerep), baseTypeExpr(), n, attrs),
+          directTypeParameters(t))
+    | nilParameters() -> nilParameters()
+    end;
 }
 
 synthesized attribute names::[String];
