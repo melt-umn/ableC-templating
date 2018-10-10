@@ -1,5 +1,5 @@
 
-template<a> struct bar;
+//template<a> struct bar;
 
 template<a>
 struct foo {
