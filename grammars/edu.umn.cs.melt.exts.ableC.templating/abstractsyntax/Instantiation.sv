@@ -42,10 +42,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   top.pp = pp"${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", ts.pps)}>";
   top.substituted = templateTypedefTypeExpr(q, n, ts.substituted); -- Don't substitute n
   
-  -- We could decorate fwrd and forward to directTypeExpr(templatedType(..., fwrd.typerep)), but
-  -- that would be less efficient since we would decorate fwrd twice, and would be effectively the
-  -- same since directTypeExpr overrides typerep when forwarding.
-  -- templatedType forwards to resolved (forward.typerep here), so no interference
+  -- templatedType forwards to resolved (forward.typerep here), so no interference.
   top.typerep = templatedType(q, n.name, ts.typereps, forward.typerep);
   
   ts.env = globalEnv(top.env);
