@@ -11,7 +11,7 @@ imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
 
 concrete production templateDeclRefExpr_c
-top::PrimaryExpr_c ::= 'inst' id::Identifier_t '<' params::TypeNames_c '>'
+top::PrimaryExpr_c ::= 'inst' id::Identifier_c '<' params::TypeNames_c '>'
 {
-  top.ast = templateDeclRefExpr(fromId(id), params.ast, location=top.location);
+  top.ast = templateDeclRefExpr(id.ast, params.ast, location=top.location);
 }
