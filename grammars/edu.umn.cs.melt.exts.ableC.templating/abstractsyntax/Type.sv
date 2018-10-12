@@ -7,6 +7,7 @@ top::Type ::= q::Qualifiers n::String args::[Type] resolved::Type
   -- Non-interfering overrides to preserve pp for better errors, as much as possible.
   top.lpp = pp"${terminate(space(), q.pps)}${text(n)}<${ppImplode(pp", ", map(\t::Type -> cat(t.lpp, t.rpp), args))}>";
   top.rpp = notext();
+  
   -- These are considered non-interfering since
   -- typeName(top.baseTypeExpr, top.typeModifierExpr).* is equivalent to
   -- typeName(top.forward.baseTypeExpr, top.forward.typeModifierExpr).*
@@ -17,7 +18,22 @@ top::Type ::= q::Qualifiers n::String args::[Type] resolved::Type
       foldr(
         consTypeName, nilTypeName(),
         map(\ t::Type -> typeName(t.baseTypeExpr, t.typeModifierExpr), args)));
+  
   top.typeModifierExpr = baseTypeExpr();
+  top.withoutTypeQualifiers =
+    templatedType(nilQualifier(), n, args, resolved.withoutTypeQualifiers);
+  top.withoutExtensionQualifiers =
+    templatedType(filterExtensionQualifiers(q), n, args, resolved.withoutExtensionQualifiers);
+  top.withTypeQualifiers = 
+    templatedType(foldQualifier(top.addedTypeQualifiers ++ q.qualifiers), n, args, resolved.withTypeQualifiers);
+  top.mergeQualifiers = \t2::Type ->
+    case t2 of
+    | templatedType(q2, _, _, resolved2) ->
+      templatedType(unionQualifiers(top.qualifiers, q2.qualifiers), n, args, resolved.mergeQualifiers(t2))
+    | _ -> resolved.mergeQualifiers(t2)
+    end;
+  
+  resolved.addedTypeQualifiers = top.addedTypeQualifiers;
   
   forwards to resolved;
 }
