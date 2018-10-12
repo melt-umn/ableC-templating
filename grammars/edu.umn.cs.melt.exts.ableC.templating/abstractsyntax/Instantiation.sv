@@ -103,12 +103,11 @@ top::Decl ::= n::Name ts::TypeNames
     foldDecl([
       decls(ts.unusedTypedefTrans),
       substDecl(
-        nameSubstitution(n.name, name(mangledName, location=builtin)) ::
         zipWith(
           typedefSubstitution,
           templateItem.templateParams,
           map(directTypeExpr, ts.typereps)),
-        templateItem.decl)]);
+        templateItem.decl(name(mangledName, location=builtin)))]);
   
   forwards to
     if !null(lookupValue(mangledName, top.env))
@@ -146,13 +145,12 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
     foldDecl([
       decls(ts.unusedTypedefTrans),
       substDecl(
-        nameSubstitution(n.name, name(mangledName, location=builtin)) ::
         refIdSubstitution(s"edu:umn:cs:melt:exts:ableC:templating:${n.name}", mangledRefId) ::
         zipWith(
           typedefSubstitution,
           templateItem.templateParams,
           map(directTypeExpr, ts.typereps)),
-        templateItem.decl)]);
+        templateItem.decl(name(mangledName, location=builtin)))]);
   
   forwards to
     if !null(lookupValue(mangledName, top.env))

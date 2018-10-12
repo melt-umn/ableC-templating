@@ -1,13 +1,13 @@
 grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 synthesized attribute templateParams::[String];
-synthesized attribute decl::Decl;
+synthesized attribute decl::(Decl ::= Name);
 synthesized attribute isItemForwardDecl::Boolean;
 
 nonterminal TemplateItem with templateParams, decl, sourceLocation, isItemValue, isItemType, isItemForwardDecl;
 
 abstract production templateItem
-top::TemplateItem ::= isItemTypedef::Boolean isItemForwardDecl::Boolean sourceLocation::Location params::[String] decl::Decl
+top::TemplateItem ::= isItemTypedef::Boolean isItemForwardDecl::Boolean sourceLocation::Location params::[String] decl::(Decl ::= Name)
 {
   top.templateParams = params;
   top.decl = decl;
@@ -21,7 +21,7 @@ abstract production errorTemplateItem
 top::TemplateItem ::= 
 {
   top.templateParams = [];
-  top.decl = decls(nilDecl());
+  top.decl = \ n::Name -> decls(nilDecl());
   top.sourceLocation = builtin;
   top.isItemValue = true;
   top.isItemType = true;

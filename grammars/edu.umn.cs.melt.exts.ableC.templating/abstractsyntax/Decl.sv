@@ -28,12 +28,13 @@ top::Decl ::= params::Names n::Name ty::TypeName
         n.name,
         templateItem(
           true, false, n.location, params.names,
-          typedefDecls(
-            nilAttribute(),
-            ty.bty,
-            consDeclarator(
-              declarator(n, ty.mty, nilAttribute(), nothingInitializer()),
-              nilDeclarator()))))]);
+          \ mangledName::Name ->
+            typedefDecls(
+              nilAttribute(),
+              ty.bty,
+              consDeclarator(
+                declarator(mangledName, ty.mty, nilAttribute(), nothingInitializer()),
+                nilDeclarator()))))]);
   
   forwards to
     if !null(localErrors)
@@ -61,32 +62,33 @@ top::Decl ::= params::Names attrs::Attributes n::Name dcls::StructItemList
         n.name,
         templateItem(
           true, false, n.location, params.names,
-          decls(
-            foldDecl([
-              -- maybeDecl {typedef __attribute__((refId("edu:umn:cs:melt:exts:ableC:templating:__name__"))) struct __name__ __name__;}
-              maybeValueDecl(
-                n.name,
-                typedefDecls(
-                  consAttribute(
-                    gccAttribute(
-                      consAttrib(
-                        appliedAttrib(
-                          attribName(name("refId", location=builtin)),
-                          consExpr(
-                            stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${n.name}\"", location=builtin),
-                            nilExpr())),
-                        nilAttrib())),
-                    nilAttribute()),
-                  tagReferenceTypeExpr(nilQualifier(), structSEU(), n),
-                  consDeclarator(
-                    declarator(n, baseTypeExpr(), nilAttribute(), nothingInitializer()),
-                    nilDeclarator()))),
-              -- struct __name__ { ... };
-              typeExprDecl(
-                nilAttribute(),
-                structTypeExpr(
-                  nilQualifier(),
-                  structDecl(attrs, justName(n), dcls, location=n.location)))]))))]);
+          \ mangledName::Name ->
+            decls(
+              foldDecl([
+                -- maybeDecl {typedef __attribute__((refId("edu:umn:cs:melt:exts:ableC:templating:__name__"))) struct __name__ __name__;}
+                maybeValueDecl(
+                  mangledName.name,
+                  typedefDecls(
+                    consAttribute(
+                      gccAttribute(
+                        consAttrib(
+                          appliedAttrib(
+                            attribName(name("refId", location=builtin)),
+                            consExpr(
+                              stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${mangledName.name}\"", location=builtin),
+                              nilExpr())),
+                          nilAttrib())),
+                      nilAttribute()),
+                    tagReferenceTypeExpr(nilQualifier(), structSEU(), mangledName),
+                    consDeclarator(
+                      declarator(mangledName, baseTypeExpr(), nilAttribute(), nothingInitializer()),
+                      nilDeclarator()))),
+                -- struct __name__ { ... };
+                typeExprDecl(
+                  nilAttribute(),
+                  structTypeExpr(
+                    nilQualifier(),
+                    structDecl(attrs, justName(mangledName), dcls, location=n.location)))]))))]);
   
   forwards to
     if !null(localErrors)
@@ -110,16 +112,12 @@ top::Decl ::= params::Names d::FunctionDecl
       end;
   
   local fwrd::Decl =
-    case d of
-    | functionDecl(_, _, _, _, n, _, _, _) -> 
-        defsDecl([
-          templateDef(
-            n.name,
-            templateItem(
-              false, false, d.sourceLocation, params.names,
-              protoFunctionDeclaration(d)))])
-    | badFunctionDecl(msg) -> decls(nilDecl())
-    end;
+    defsDecl(
+      [templateDef(
+         d.name,
+         templateItem(
+           false, false, d.sourceLocation, params.names,
+           instFunctionDeclaration(_, d)))]);
   
   forwards to
     if !null(localErrors)
@@ -127,15 +125,18 @@ top::Decl ::= params::Names d::FunctionDecl
     else fwrd;
 }
 
-abstract production protoFunctionDeclaration
-top::Decl ::= decl::FunctionDecl
+abstract production instFunctionDeclaration
+top::Decl ::= mangledName::Name decl::FunctionDecl
 {
   propagate substituted;
-  top.pp = pp"proto ${decl.pp}";
-  forwards to decl.withProto;
+  top.pp = pp"inst_decl ${decl.pp}";
+  
+  decl.givenMangledName = mangledName;
+  forwards to decl.instFunctionDecl;
 }
 
-synthesized attribute withProto::Decl occurs on FunctionDecl;
+inherited attribute givenMangledName::Name occurs on FunctionDecl;
+synthesized attribute instFunctionDecl::Decl occurs on FunctionDecl;
 
 aspect production functionDecl
 top::FunctionDecl ::= storage::[StorageClass]  fnquals::SpecialSpecifiers  bty::BaseTypeExpr mty::TypeModifierExpr  n::Name  attrs::Attributes  ds::Decls  body::Stmt
@@ -144,13 +145,13 @@ top::FunctionDecl ::= storage::[StorageClass]  fnquals::SpecialSpecifiers  bty::
     if !containsBy(storageClassEq, staticStorageClass(), storage)
     then staticStorageClass() :: storage
     else storage;
-  top.withProto =
+  top.instFunctionDecl =
     decls(
       foldDecl([
         variableDecls(
           newStorageClasses, nilAttribute(), bty,
           consDeclarator(
-            declarator(n, mty, nilAttribute(), nothingInitializer()),
+            declarator(top.givenMangledName, mty, nilAttribute(), nothingInitializer()),
             nilDeclarator())),
         functionDeclaration(
           functionDecl(
@@ -160,13 +161,13 @@ top::FunctionDecl ::= storage::[StorageClass]  fnquals::SpecialSpecifiers  bty::
               functionTypeExprWithArgs(result, directTypeParameters(params), variadic, q)
             | functionTypeExprWithoutArgs(_, _, _) -> mty
             | _ -> error("mty should always be a functionTypeExpr")
-            end, n, attrs, ds, body))]));
+            end, top.givenMangledName, attrs, ds, body))]));
 }
 
 aspect production badFunctionDecl
 top::FunctionDecl ::= msg::[Message]
 {
-  top.withProto = functionDeclaration(top);
+  top.instFunctionDecl = functionDeclaration(top);
 }
 
 function directTypeParameters
