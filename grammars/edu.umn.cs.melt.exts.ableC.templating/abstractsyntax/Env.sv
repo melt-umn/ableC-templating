@@ -4,7 +4,7 @@ synthesized attribute templateParams::[String];
 synthesized attribute decl::(Decl ::= Name);
 synthesized attribute isItemForwardDecl::Boolean;
 
-nonterminal TemplateItem with templateParams, decl, sourceLocation, isItemValue, isItemType, isItemForwardDecl;
+closed nonterminal TemplateItem with templateParams, decl, sourceLocation, isItemValue, isItemType, isItemForwardDecl;
 
 abstract production templateItem
 top::TemplateItem ::= isItemTypedef::Boolean isItemForwardDecl::Boolean sourceLocation::Location params::[String] decl::(Decl ::= Name)

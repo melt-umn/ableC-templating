@@ -24,7 +24,7 @@ top::Type ::= q::Qualifiers n::String args::[Type] resolved::Type
     templatedType(nilQualifier(), n, args, resolved.withoutTypeQualifiers);
   top.withoutExtensionQualifiers =
     templatedType(filterExtensionQualifiers(q), n, args, resolved.withoutExtensionQualifiers);
-  top.withTypeQualifiers = 
+  top.withTypeQualifiers =
     templatedType(foldQualifier(top.addedTypeQualifiers ++ q.qualifiers), n, args, resolved.withTypeQualifiers);
   top.mergeQualifiers = \t2::Type ->
     case t2 of
