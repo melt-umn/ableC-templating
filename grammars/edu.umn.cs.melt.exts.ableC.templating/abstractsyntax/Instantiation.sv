@@ -1,10 +1,10 @@
 grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-abstract production templateDeclRefExpr
+abstract production templateDirectRefExpr
 top::Expr ::= n::Name ts::TypeNames
 {
+  propagate substituted;
   top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>";
-  top.substituted = templateDeclRefExpr(n, ts.substituted, location=top.location); -- Don't substitute n
   
   ts.env = globalEnv(top.env);
   
@@ -27,7 +27,43 @@ top::Expr ::= n::Name ts::TypeNames
   local fwrd::Expr =
     injectGlobalDeclsExpr(
       consDecl(decl, nilDecl()),
-      declRefExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), location=builtin),
+      directRefExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), location=builtin),
+      location=top.location);
+  
+  forwards to
+    if containsErrorType(ts.typereps)
+    then errorExpr(localErrors, location=top.location)
+    else mkErrorCheck(instErrors, fwrd);
+}
+
+abstract production templateDirectCallExpr
+top::Expr ::= n::Name ts::TypeNames a::Exprs
+{
+  propagate substituted;
+  top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)}";
+  
+  ts.env = globalEnv(top.env);
+  
+  local decl::Decl = templateExprInstDecl(n, ts);
+  decl.isTopLevel = true;
+  decl.env = top.env;
+  decl.returnType = nothing();
+  
+  local localErrors::[Message] = ts.errors ++ n.templateLookupCheck ++ a.errors;
+  local instErrors::[Message] =
+    localErrors ++ 
+    if !null(decl.errors)
+    then
+      [nested(
+         top.location,
+         s"In instantiation ${n.name}<${show(80, ppImplode(pp", ", ts.pps))}>",
+         decl.errors)]
+    else [];
+  
+  local fwrd::Expr =
+    injectGlobalDeclsExpr(
+      consDecl(decl, nilDecl()),
+      directCallExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), a, location=builtin),
       location=top.location);
   
   forwards to
@@ -39,8 +75,8 @@ top::Expr ::= n::Name ts::TypeNames
 abstract production templateTypedefTypeExpr
 top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
 {
+  propagate substituted;
   top.pp = pp"${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", ts.pps)}>";
-  top.substituted = templateTypedefTypeExpr(q, n, ts.substituted); -- Don't substitute n
   
   -- templatedType forwards to resolved (forward.typerep here), so no interference.
   top.typerep = templatedType(q, n.name, ts.typereps, forward.typerep);
