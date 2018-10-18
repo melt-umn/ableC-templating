@@ -24,35 +24,75 @@ action {
   context = lh:closeScope(context); -- Opened by TemplateParams_c
 }
 
+-- Duplicated from InitialFunctionDefinition_c due to MDA requirments
 nonterminal TemplateInitialFunctionDefinition_c with location, ast<ast:FunctionDecl>, givenStmt;
 concrete productions top::TemplateInitialFunctionDefinition_c
-| ds::DeclarationSpecifiers_c  d::Declarator_c  l::DeclarationList_c
+| ds::DeclarationSpecifiers_c  d::Declarator_c  l::InitiallyUnqualifiedDeclarationList_c
     {
       ds.givenQualifiers = ds.typeQualifiers;
       d.givenType = ast:baseTypeExpr();
+      l.givenQualifiers = 
+        case baseMT of
+        | ast:functionTypeExprWithArgs(t, p, v, q) -> q
+        | ast:functionTypeExprWithoutArgs(t, v, q) -> q
+        end;
+
+      local specialSpecifiers :: ast:SpecialSpecifiers =
+        foldr(ast:consSpecialSpecifier, ast:nilSpecialSpecifier(), ds.specialSpecifiers);
       
       local bt :: ast:BaseTypeExpr =
         ast:figureOutTypeFromSpecifiers(ds.location, ds.typeQualifiers, ds.preTypeSpecifiers, ds.realTypeSpecifiers, ds.mutateTypeSpecifiers);
       
-      local specialSpecifiers :: ast:SpecialSpecifiers =
-        foldr(ast:consSpecialSpecifier, ast:nilSpecialSpecifier(), ds.specialSpecifiers);
-      
+      -- If this is a K&R-style declaration, attatch any function qualifiers to the first declaration instead
+      local baseMT  :: ast:TypeModifierExpr = d.ast;
+      baseMT.ast:baseType = ast:errorType();
+      baseMT.ast:typeModifiersIn = [];
+      baseMT.ast:returnType = nothing();
+      local mt :: ast:TypeModifierExpr =
+        case l.isDeclListEmpty, baseMT of
+        | false, ast:functionTypeExprWithArgs(t, p, v, q) ->
+          ast:functionTypeExprWithArgs(t, p, v, ast:nilQualifier())
+        | false, ast:functionTypeExprWithoutArgs(t, v, q) ->
+          ast:functionTypeExprWithoutArgs(t, v, ast:nilQualifier())
+        | _, mt -> mt
+        end;
+
       top.ast = 
-        ast:functionDecl(ds.storageClass, specialSpecifiers, bt, d.ast, d.declaredIdent, ds.attributes, ast:foldDecl(l.ast), top.givenStmt);
+        ast:functionDecl(ds.storageClass, specialSpecifiers, bt, mt, d.declaredIdent, ds.attributes, ast:foldDecl(l.ast), top.givenStmt);
     }
     action {
       -- Function are annoying because we have to open a scope, then add the
       -- parameters, and close it after the brace.
       context = lh:beginFunctionScope(d.declaredIdent, d.declaredParamIdents, context);
     }
-| d::Declarator_c  l::DeclarationList_c
+| d::Declarator_c  l::InitiallyUnqualifiedDeclarationList_c
     {
       d.givenType = ast:baseTypeExpr();
+      l.givenQualifiers = 
+        case baseMT of
+        | ast:functionTypeExprWithArgs(t, p, v, q) -> q
+        | ast:functionTypeExprWithoutArgs(t, v, q) -> q
+        end;
+      
       local bt :: ast:BaseTypeExpr =
         ast:figureOutTypeFromSpecifiers(d.location, ast:nilQualifier(), [], [], []);
+      
+      -- If this is a K&R-style declaration, attatch any function qualifiers to the first declaration instead
+      local baseMT  :: ast:TypeModifierExpr = d.ast;
+      baseMT.ast:baseType = ast:errorType();
+      baseMT.ast:typeModifiersIn = [];
+      baseMT.ast:returnType = nothing();
+      local mt :: ast:TypeModifierExpr =
+        case l.isDeclListEmpty, baseMT of
+        | false, ast:functionTypeExprWithArgs(t, p, v, q) ->
+          ast:functionTypeExprWithArgs(t, p, v, ast:nilQualifier())
+        | false, ast:functionTypeExprWithoutArgs(t, v, q) ->
+          ast:functionTypeExprWithoutArgs(t, v, ast:nilQualifier())
+        | _, mt -> mt
+        end;
 
       top.ast = 
-        ast:functionDecl([], ast:nilSpecialSpecifier(), bt, d.ast, d.declaredIdent, ast:nilAttribute(), ast:foldDecl(l.ast), top.givenStmt);
+        ast:functionDecl([], ast:nilSpecialSpecifier(), bt, mt, d.declaredIdent, ast:nilAttribute(), ast:foldDecl(l.ast), top.givenStmt);
     }
     action {
       -- Unfortunate duplication. This production is necessary for K&R compatibility
