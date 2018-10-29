@@ -10,8 +10,26 @@ imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
 
-concrete production templateDeclRefExpr_c
+terminal TemplateLParen_t '(';
+
+disambiguate TemplateLParen_t, LParen_t {
+  pluck TemplateLParen_t;
+}
+
+concrete production templateDirectRefExpr_c
 top::PrimaryExpr_c ::= 'inst' id::Identifier_c '<' params::TypeNames_c '>'
 {
-  top.ast = templateDeclRefExpr(id.ast, params.ast, location=top.location);
+  top.ast = templateDirectRefExpr(id.ast, params.ast, location=top.location);
+}
+
+concrete production templateDirectCallExpr_c
+top::PrimaryExpr_c ::= 'inst' id::Identifier_c '<' params::TypeNames_c '>' '(' a::ArgumentExprList_c ')'
+{
+  top.ast = templateDirectCallExpr(id.ast, params.ast, foldExpr(a.ast), location=top.location);
+}
+
+concrete production templateDirectCallNoArgsExpr_c
+top::PrimaryExpr_c ::= 'inst' id::Identifier_c '<' params::TypeNames_c '>' '(' ')'
+{
+  top.ast = templateDirectCallExpr(id.ast, params.ast, nilExpr(), location=top.location);
 }

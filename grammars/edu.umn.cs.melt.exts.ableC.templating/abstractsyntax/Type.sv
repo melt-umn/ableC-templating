@@ -8,16 +8,21 @@ top::Type ::= q::Qualifiers n::String args::[Type] resolved::Type
   top.lpp = pp"${terminate(space(), q.pps)}${text(n)}<${ppImplode(pp", ", map(\t::Type -> cat(t.lpp, t.rpp), args))}>";
   top.rpp = notext();
   
-  -- These are considered non-interfering since
+  -- This is considered non-interfering since
   -- typeName(top.baseTypeExpr, top.typeModifierExpr).* is equivalent to
   -- typeName(top.forward.baseTypeExpr, top.forward.typeModifierExpr).*
   top.baseTypeExpr =
-    templateTypedefTypeExpr(
-      q,
-      name(n, location=builtin),
-      foldr(
-        consTypeName, nilTypeName(),
-        map(\ t::Type -> typeName(t.baseTypeExpr, t.typeModifierExpr), args)));
+    case resolved of
+    -- Don't reproduce previous instantiation errors
+    | errorType() -> errorTypeExpr([])
+    | _ ->
+      templateTypedefTypeExpr(
+        q,
+        name(n, location=builtin),
+        foldr(
+          consTypeName, nilTypeName(),
+          map(\ t::Type -> typeName(t.baseTypeExpr, t.typeModifierExpr), args)))
+    end;
   
   top.typeModifierExpr = baseTypeExpr();
   top.withoutTypeQualifiers =
