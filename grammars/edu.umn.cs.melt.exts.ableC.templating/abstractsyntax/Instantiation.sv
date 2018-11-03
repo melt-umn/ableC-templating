@@ -115,7 +115,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
 abstract production templateExprInstDecl
 top::Decl ::= n::Name ts::TypeNames
 {
-  top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>;";
+  top.pp = pp"inst ${n.pp}<${ppImplode(pp", ", ts.pps)}>;";
   top.substituted = templateExprInstDecl(n, ts.substituted); -- Don't substitute n
   
   local templateItem::Decorated TemplateItem = n.templateItem;
@@ -157,7 +157,7 @@ top::Decl ::= n::Name ts::TypeNames
 abstract production templateTypeExprInstDecl
 top::Decl ::= q::Qualifiers n::Name ts::TypeNames
 {
-  top.pp = pp"${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", ts.pps)}>;";
+  top.pp = pp"inst ${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", ts.pps)}>;";
   top.substituted = templateTypeExprInstDecl(q, n, ts.substituted); -- Don't substitute n
   
   local templateItem::Decorated TemplateItem = n.templateItem;
@@ -196,33 +196,6 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
     if !null(localErrors)
     then decls(consDecl(warnDecl(localErrors), fwrd))
     else decls(fwrd);
-}
-
--- type parameters should be included literally in the forward tree exactly once
--- Generate phony typedefs instead of typeExprDecls to avoid gcc warnings
-synthesized attribute unusedTypedefTrans::Decls occurs on TypeNames;
-
-aspect production consTypeName
-top::TypeNames ::= h::TypeName t::TypeNames
-{
-  top.unusedTypedefTrans =
-    consDecl(
-      typedefDecls(
-        nilAttribute(), h.bty,
-        consDeclarator(
-          declarator(
-            name(s"_template_param_unused_${toString(genInt())}", location=builtin),
-            h.mty,
-            nilAttribute(),
-            nothingInitializer()),
-          nilDeclarator())),
-      t.unusedTypedefTrans);
-}
-
-aspect production nilTypeName
-top::TypeNames ::=
-{
-  top.unusedTypedefTrans = nilDecl();
 }
 
 function templateMangledName
