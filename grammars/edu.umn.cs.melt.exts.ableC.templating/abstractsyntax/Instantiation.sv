@@ -9,7 +9,7 @@ top::Expr ::= n::Name ts::TypeNames
   forwards to
     injectGlobalDeclsExpr(
       consDecl(templateExprInstDecl(n, ts), nilDecl()),
-      directRefExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), location=builtin),
+      directRefExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), location=top.location),
       location=top.location);
 }
 
@@ -22,7 +22,7 @@ top::Expr ::= n::Name ts::TypeNames a::Exprs
   forwards to
     injectGlobalDeclsExpr(
       consDecl(templateExprInstDecl(n, ts), nilDecl()),
-      directCallExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), a, location=builtin),
+      directCallExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), a, location=top.location),
       location=top.location);
 }
 
