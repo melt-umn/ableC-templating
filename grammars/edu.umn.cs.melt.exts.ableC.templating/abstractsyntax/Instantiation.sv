@@ -6,34 +6,11 @@ top::Expr ::= n::Name ts::TypeNames
   propagate substituted;
   top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>";
   
-  ts.env = globalEnv(top.env);
-  
-  local decl::Decl = templateExprInstDecl(n, ts);
-  decl.isTopLevel = true;
-  decl.env = top.env;
-  decl.returnType = nothing();
-  
-  local localErrors::[Message] = ts.errors ++ n.templateLookupCheck;
-  local instErrors::[Message] =
-    localErrors ++ 
-    if !null(decl.errors)
-    then
-      [nested(
-         top.location,
-         s"In instantiation ${n.name}<${show(80, ppImplode(pp", ", ts.pps))}>",
-         decl.errors)]
-    else [];
-  
-  local fwrd::Expr =
+  forwards to
     injectGlobalDeclsExpr(
-      consDecl(decl, nilDecl()),
+      consDecl(templateExprInstDecl(n, ts), nilDecl()),
       directRefExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), location=builtin),
       location=top.location);
-  
-  forwards to
-    if containsErrorType(ts.typereps)
-    then errorExpr(localErrors, location=top.location)
-    else mkErrorCheck(instErrors, fwrd);
 }
 
 abstract production templateDirectCallExpr
@@ -42,34 +19,11 @@ top::Expr ::= n::Name ts::TypeNames a::Exprs
   propagate substituted;
   top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)}";
   
-  ts.env = globalEnv(top.env);
-  
-  local decl::Decl = templateExprInstDecl(n, ts);
-  decl.isTopLevel = true;
-  decl.env = top.env;
-  decl.returnType = nothing();
-  
-  local localErrors::[Message] = ts.errors ++ n.templateLookupCheck ++ a.errors;
-  local instErrors::[Message] =
-    localErrors ++ 
-    if !null(decl.errors)
-    then
-      [nested(
-         top.location,
-         s"In instantiation ${n.name}<${show(80, ppImplode(pp", ", ts.pps))}>",
-         decl.errors)]
-    else [];
-  
-  local fwrd::Expr =
+  forwards to
     injectGlobalDeclsExpr(
-      consDecl(decl, nilDecl()),
+      consDecl(templateExprInstDecl(n, ts), nilDecl()),
       directCallExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), a, location=builtin),
       location=top.location);
-  
-  forwards to
-    if containsErrorType(ts.typereps)
-    then errorExpr(localErrors, location=top.location)
-    else mkErrorCheck(instErrors, fwrd);
 }
 
 abstract production templateTypedefTypeExpr
@@ -81,35 +35,10 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   -- templatedType forwards to resolved (forward.typerep here), so no interference.
   top.typerep = templatedType(q, n.name, ts.typereps, forward.typerep);
   
-  ts.env = globalEnv(top.env);
-  
-  local decl::Decl = templateTypeExprInstDecl(q, n, ts);
-  decl.isTopLevel = true;
-  decl.env = top.env;
-  decl.returnType = nothing();
-  
-  local localErrors::[Message] = ts.errors ++ n.templateLookupCheck;
-  local instErrors::[Message] =
-    localErrors ++ 
-    if !null(decl.errors)
-    then
-      [nested(
-         n.location,
-         s"In instantiation ${n.name}<${show(80, ppImplode(pp", ", ts.pps))}>",
-         decl.errors)]
-    else [];
-  
-  local fwrd::BaseTypeExpr =
-    injectGlobalDeclsTypeExpr(
-      consDecl(decl, nilDecl()),
-      typedefTypeExpr(q, name(templateMangledName(n.name, ts.typereps), location=builtin)));
-  
   forwards to
-    if containsErrorType(ts.typereps)
-    then errorTypeExpr(localErrors)
-    else if !null(instErrors)
-    then errorTypeExpr(instErrors)
-    else fwrd;
+    injectGlobalDeclsTypeExpr(
+      consDecl(templateTypeExprInstDecl(q, n, ts), nilDecl()),
+      typedefTypeExpr(q, name(templateMangledName(n.name, ts.typereps), location=builtin)));
 }
 
 abstract production templateExprInstDecl
@@ -131,27 +60,43 @@ top::Decl ::= n::Name ts::TypeNames
             n.location,
             s"Wrong number of template parameters for ${n.name}, " ++
             s"expected ${toString(length(templateItem.templateParams))} but got ${toString(ts.count)}")]
+    else if !null(fwrd.errors)
+    then
+      [nested(
+         n.location,
+         s"In instantiation ${n.name}<${show(80, ppImplode(pp", ", ts.pps))}>",
+         fwrd.errors)]
     else [];
   
   local mangledName::String = templateMangledName(n.name, ts.typereps);
   
-  local fwrd::Decls =
-    if !null(lookupValue(mangledName, top.env))
-    then nilDecl()
-    else
-      foldDecl(
-        ts.decls ++
-        [substDecl(
-           zipWith(
-             typedefSubstitution,
-             templateItem.templateParams,
-             map(directTypeExpr, ts.typereps)),
-           templateItem.decl(name(mangledName, location=builtin)))]);
+  local fwrd::Decl =
+    decls(
+      if !null(lookupValue(mangledName, top.env))
+      then nilDecl()
+      else
+        foldDecl(
+          ts.decls ++
+          [substDecl(
+             zipWith(
+               typedefSubstitution,
+               templateItem.templateParams,
+               map(directTypeExpr, ts.typereps)),
+             templateItem.decl(name(mangledName, location=builtin)))]));
+  fwrd.isTopLevel = true;
+  fwrd.env = top.env;
+  fwrd.returnType = nothing();
   
   forwards to
-    if !null(localErrors)
-    then decls(consDecl(warnDecl(localErrors), fwrd))
-    else decls(fwrd);
+    if containsErrorType(ts.typereps) || !null(localErrors)
+    then
+      variableDecls(
+        [], nilAttribute(),
+        errorTypeExpr(localErrors),
+        consDeclarator(
+          declarator(name(mangledName, location=builtin), baseTypeExpr(), nilAttribute(), nothingInitializer()),
+          nilDeclarator()))
+    else decDecl(fwrd);
 }
 
 abstract production templateTypeExprInstDecl
@@ -173,29 +118,45 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
             n.location,
             s"Wrong number of template parameters for ${n.name}, " ++
             s"expected ${toString(length(templateItem.templateParams))} but got ${toString(ts.count)}")]
+    else if !null(fwrd.errors)
+    then
+      [nested(
+         n.location,
+         s"In instantiation ${n.name}<${show(80, ppImplode(pp", ", ts.pps))}>",
+         fwrd.errors)]
     else [];
   
   local mangledName::String = templateMangledName(n.name, ts.typereps);
   local mangledRefId::String = templateMangledRefId(n.name, ts.typereps);
   
-  local fwrd::Decls =
-    if !null(lookupValue(mangledName, top.env))
-    then nilDecl()
-    else
-      foldDecl(
-        ts.decls ++
-        [substDecl(
-           refIdSubstitution(s"edu:umn:cs:melt:exts:ableC:templating:${n.name}", mangledRefId) ::
-           zipWith(
-             typedefSubstitution,
-             templateItem.templateParams,
-             map(directTypeExpr, ts.typereps)),
-           templateItem.decl(name(mangledName, location=builtin)))]);
+  local fwrd::Decl =
+    decls(
+      if !null(lookupValue(mangledName, top.env))
+      then nilDecl()
+      else
+        foldDecl(
+          ts.decls ++
+          [substDecl(
+             refIdSubstitution(s"edu:umn:cs:melt:exts:ableC:templating:${n.name}", mangledRefId) ::
+             zipWith(
+               typedefSubstitution,
+               templateItem.templateParams,
+               map(directTypeExpr, ts.typereps)),
+             templateItem.decl(name(mangledName, location=builtin)))]));
+  fwrd.isTopLevel = true;
+  fwrd.env = top.env;
+  fwrd.returnType = nothing();
   
   forwards to
-    if !null(localErrors)
-    then decls(consDecl(warnDecl(localErrors), fwrd))
-    else decls(fwrd);
+    if containsErrorType(ts.typereps) || !null(localErrors)
+    then
+      typedefDecls(
+        nilAttribute(),
+        errorTypeExpr(localErrors),
+        consDeclarator(
+          declarator(name(mangledName, location=builtin), baseTypeExpr(), nilAttribute(), nothingInitializer()),
+          nilDeclarator()))
+    else decDecl(fwrd);
 }
 
 function templateMangledName
