@@ -139,11 +139,11 @@ inherited attribute givenMangledName::Name occurs on FunctionDecl;
 synthesized attribute instFunctionDecl::Decl occurs on FunctionDecl;
 
 aspect production functionDecl
-top::FunctionDecl ::= storage::[StorageClass]  fnquals::SpecialSpecifiers  bty::BaseTypeExpr mty::TypeModifierExpr  n::Name  attrs::Attributes  ds::Decls  body::Stmt
+top::FunctionDecl ::= storage::StorageClasses  fnquals::SpecialSpecifiers  bty::BaseTypeExpr mty::TypeModifierExpr  n::Name  attrs::Attributes  ds::Decls  body::Stmt
 {
-  local newStorageClasses::[StorageClass] =
-    if !containsBy(storageClassEq, staticStorageClass(), storage)
-    then staticStorageClass() :: storage
+  local newStorageClasses::StorageClasses =
+    if !storage.containsStatic
+    then consStorageClass(staticStorageClass(), storage)
     else storage;
   top.instFunctionDecl =
     decls(
@@ -200,16 +200,28 @@ top::Names ::=
   top.typeParameterErrors = [];
 }
 
-function storageClassEq
-Boolean ::= s1::StorageClass s2::StorageClass
+synthesized attribute containsStatic::Boolean occurs on StorageClasses, StorageClass;
+
+aspect production consStorageClass
+top::StorageClasses ::= h::StorageClass  t::StorageClasses
 {
-  return
-    case s1, s2 of
-      externStorageClass(), externStorageClass() -> true
-    | staticStorageClass(), staticStorageClass() -> true
-    | autoStorageClass(), autoStorageClass() -> true
-    | registerStorageClass(), registerStorageClass() -> true
-    | threadLocalStorageClass(), threadLocalStorageClass() -> true
-    | _, _ -> false
-    end;
+  top.containsStatic = h.containsStatic || t.containsStatic;
+}
+
+aspect production nilStorageClass
+top::StorageClasses ::=
+{
+  top.containsStatic = false;
+}
+
+aspect default production
+top::StorageClasses ::=
+{
+  top.containsStatic = false;
+}
+
+aspect production staticStorageClass
+top::StorageClass ::=
+{
+  top.containsStatic = true;
 }
