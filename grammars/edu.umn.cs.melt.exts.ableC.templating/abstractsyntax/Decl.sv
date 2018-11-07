@@ -215,7 +215,7 @@ top::StorageClasses ::=
 }
 
 aspect default production
-top::StorageClasses ::=
+top::StorageClass ::=
 {
   top.containsStatic = false;
 }
