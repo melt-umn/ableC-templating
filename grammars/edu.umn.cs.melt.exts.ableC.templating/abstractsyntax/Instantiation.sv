@@ -91,7 +91,7 @@ top::Decl ::= n::Name ts::TypeNames
     if containsErrorType(ts.typereps) || !null(localErrors)
     then
       variableDecls(
-        [], nilAttribute(),
+        nilStorageClass(), nilAttribute(),
         errorTypeExpr(localErrors),
         consDeclarator(
           declarator(name(mangledName, location=builtin), baseTypeExpr(), nilAttribute(), nothingInitializer()),
