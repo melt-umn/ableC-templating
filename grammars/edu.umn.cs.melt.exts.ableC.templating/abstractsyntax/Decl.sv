@@ -84,16 +84,34 @@ top::Decl ::= params::Names attrs::Attributes n::Name dcls::StructItemList
                       declarator(mangledName, baseTypeExpr(), nilAttribute(), nothingInitializer()),
                       nilDeclarator()))),
                 -- struct __name__ { ... };
-                typeExprDecl(
-                  nilAttribute(),
-                  structTypeExpr(
-                    nilQualifier(),
-                    structDecl(attrs, justName(mangledName), dcls, location=n.location)))]))))]);
+                deferredStructDecl(attrs, mangledName, dcls)]))))]);
   
   forwards to
     if !null(localErrors)
     then decls(consDecl(warnDecl(localErrors), consDecl(fwrd, nilDecl())))
     else fwrd;
+}
+
+abstract production deferredStructDecl
+top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
+{
+  propagate substituted;
+  top.pp = ppConcat([
+    pp"deferred struct ", ppAttributes(attrs), text(n.name), space(),
+    braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
+  forwards to
+    deferredDecl(
+      \ env::Decorated Env ->
+        all(
+          map(
+            \ c::Pair<String ValueItem> ->
+              c.snd.typerep.isCompleteType(env),
+            foldr(consDefs, nilDefs(), dcls.localDefs).valueContribs)),
+      typeExprDecl(
+        nilAttribute(),
+        structTypeExpr(
+          nilQualifier(),
+          structDecl(attrs, justName(n), dcls, location=n.location))));
 }
 
 abstract production templateFunctionDecl
