@@ -120,12 +120,15 @@ top::Decl ::= n::Name ts::TypeNames
   forwards to
     if containsErrorType(ts.typereps) || !null(localErrors)
     then
-      variableDecls(
-        nilStorageClass(), nilAttribute(),
-        errorTypeExpr(localErrors),
-        consDeclarator(
-          declarator(name(mangledName, location=builtin), baseTypeExpr(), nilAttribute(), nothingInitializer()),
-          nilDeclarator()))
+      decls(
+        foldDecl(
+          ts.decls ++
+          [variableDecls(
+             nilStorageClass(), nilAttribute(),
+             errorTypeExpr(localErrors),
+             consDeclarator(
+               declarator(name(mangledName, location=builtin), baseTypeExpr(), nilAttribute(), nothingInitializer()),
+               nilDeclarator()))]))
     else decDecl(fwrd);
 }
 
@@ -180,12 +183,19 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
   forwards to
     if containsErrorType(ts.typereps) || !null(localErrors)
     then
-      typedefDecls(
-        nilAttribute(),
-        errorTypeExpr(localErrors),
-        consDeclarator(
-          declarator(name(mangledName, location=builtin), baseTypeExpr(), nilAttribute(), nothingInitializer()),
-          nilDeclarator()))
+      decls(
+        foldDecl(
+          ts.decls ++
+          [typedefDecls(
+             nilAttribute(),
+             errorTypeExpr(localErrors),
+             consDeclarator(
+               declarator(
+                 name(mangledName, location=builtin),
+                 baseTypeExpr(),
+                 nilAttribute(),
+                 nothingInitializer()),
+               nilDeclarator()))]))
     else decDecl(fwrd);
 }
 
