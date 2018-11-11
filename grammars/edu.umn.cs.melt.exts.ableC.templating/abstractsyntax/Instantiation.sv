@@ -9,7 +9,7 @@ top::Expr ::= n::Name ts::TypeNames
   forwards to
     injectGlobalDeclsExpr(
       consDecl(templateExprInstDecl(n, ts), nilDecl()),
-      directRefExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), location=top.location),
+      templateInstDirectRefExpr(n, ts, location=top.location),
       location=top.location);
 }
 
@@ -22,7 +22,7 @@ top::Expr ::= n::Name ts::TypeNames a::Exprs
   forwards to
     injectGlobalDeclsExpr(
       consDecl(templateExprInstDecl(n, ts), nilDecl()),
-      directCallExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), a, location=top.location),
+      templateInstDirectCallExpr(n, ts, a, location=top.location),
       location=top.location);
 }
 
@@ -38,7 +38,37 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   forwards to
     injectGlobalDeclsTypeExpr(
       consDecl(templateTypeExprInstDecl(q, n, ts), nilDecl()),
-      typedefTypeExpr(q, name(templateMangledName(n.name, ts.typereps), location=builtin)));
+      templateInstTypedefTypeExpr(q, n, ts));
+}
+
+-- These are needed to compute the mangled name in the env containing defs from
+-- the instantiation, to avoid redecorating the type arguments and regenerating
+-- refIds, etc.
+abstract production templateInstDirectRefExpr
+top::Expr ::= n::Name ts::TypeNames
+{
+  propagate substituted;
+  top.pp = pp"ref ${n.pp}<${ppImplode(pp", ", ts.pps)}>";
+  forwards to
+    directRefExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), location=top.location);
+}
+
+abstract production templateInstDirectCallExpr
+top::Expr ::= n::Name ts::TypeNames a::Exprs
+{
+  propagate substituted;
+  top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)}";
+  forwards to
+    directCallExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), a, location=top.location);
+}
+
+abstract production templateInstTypedefTypeExpr
+top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
+{
+  propagate substituted;
+  top.pp = pp"${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", ts.pps)}>";
+  forwards to
+    typedefTypeExpr(q, name(templateMangledName(n.name, ts.typereps), location=builtin));
 }
 
 abstract production templateExprInstDecl
