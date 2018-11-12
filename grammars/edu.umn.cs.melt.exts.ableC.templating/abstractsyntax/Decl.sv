@@ -66,23 +66,21 @@ top::Decl ::= params::Names attrs::Attributes n::Name dcls::StructItemList
             decls(
               foldDecl([
                 -- maybeDecl {typedef __attribute__((refId("edu:umn:cs:melt:exts:ableC:templating:__name__"))) struct __name__ __name__;}
-                maybeValueDecl(
-                  mangledName.name,
-                  typedefDecls(
-                    consAttribute(
-                      gccAttribute(
-                        consAttrib(
-                          appliedAttrib(
-                            attribName(name("refId", location=builtin)),
-                            consExpr(
-                              stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${mangledName.name}\"", location=builtin),
-                              nilExpr())),
-                          nilAttrib())),
-                      nilAttribute()),
-                    tagReferenceTypeExpr(nilQualifier(), structSEU(), mangledName),
-                    consDeclarator(
-                      declarator(mangledName, baseTypeExpr(), nilAttribute(), nothingInitializer()),
-                      nilDeclarator()))),
+                typedefDecls(
+                  consAttribute(
+                    gccAttribute(
+                      consAttrib(
+                        appliedAttrib(
+                          attribName(name("refId", location=builtin)),
+                          consExpr(
+                            stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${mangledName.name}\"", location=builtin),
+                            nilExpr())),
+                        nilAttrib())),
+                    nilAttribute()),
+                  tagReferenceTypeExpr(nilQualifier(), structSEU(), mangledName),
+                  consDeclarator(
+                    declarator(mangledName, baseTypeExpr(), nilAttribute(), nothingInitializer()),
+                    nilDeclarator())),
                 -- Defer the struct declaration until all components are complete types
                 deferredStructDecl(attrs, mangledName, dcls)]))))]);
   

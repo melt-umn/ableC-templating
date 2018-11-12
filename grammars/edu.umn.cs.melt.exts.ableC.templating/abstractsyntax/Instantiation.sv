@@ -102,11 +102,11 @@ top::Decl ::= n::Name ts::TypeNames
   
   local fwrd::Decl =
     decls(
-      if !null(lookupValue(mangledName, top.env))
-      then nilDecl()
-      else
-        foldDecl(
-          ts.decls ++
+      foldDecl(
+        ts.decls ++
+        if !null(lookupValue(mangledName, top.env))
+        then []
+        else
           [substDecl(
              zipWith(
                typedefSubstitution,
@@ -164,11 +164,11 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
   
   local fwrd::Decl =
     decls(
-      if !null(lookupValue(mangledName, top.env))
-      then nilDecl()
-      else
-        foldDecl(
-          ts.decls ++
+      foldDecl(
+        ts.decls ++
+        if !null(lookupValue(mangledName, top.env))
+        then []
+        else
           [substDecl(
              refIdSubstitution(s"edu:umn:cs:melt:exts:ableC:templating:${n.name}", mangledRefId) ::
              zipWith(
