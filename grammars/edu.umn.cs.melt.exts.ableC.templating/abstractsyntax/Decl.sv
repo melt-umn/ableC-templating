@@ -158,7 +158,7 @@ aspect production functionDecl
 top::FunctionDecl ::= storage::StorageClasses  fnquals::SpecialSpecifiers  bty::BaseTypeExpr mty::TypeModifierExpr  n::Name  attrs::Attributes  ds::Decls  body::Stmt
 {
   local newStorageClasses::StorageClasses =
-    if !storage.containsStatic
+    if !storage.isStatic
     then consStorageClass(staticStorageClass(), storage)
     else storage;
   top.instFunctionDecl =
@@ -214,30 +214,4 @@ aspect production nilName
 top::Names ::=
 {
   top.typeParameterErrors = [];
-}
-
-synthesized attribute containsStatic::Boolean occurs on StorageClasses, StorageClass;
-
-aspect production consStorageClass
-top::StorageClasses ::= h::StorageClass  t::StorageClasses
-{
-  top.containsStatic = h.containsStatic || t.containsStatic;
-}
-
-aspect production nilStorageClass
-top::StorageClasses ::=
-{
-  top.containsStatic = false;
-}
-
-aspect default production
-top::StorageClass ::=
-{
-  top.containsStatic = false;
-}
-
-aspect production staticStorageClass
-top::StorageClass ::=
-{
-  top.containsStatic = true;
 }
