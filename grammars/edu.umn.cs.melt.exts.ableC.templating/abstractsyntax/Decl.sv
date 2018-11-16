@@ -100,12 +100,16 @@ top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
   forwards to
     foldr(
       deferredDecl,
-      -- struct __name__ { ... };
-      typeExprDecl(
-        nilAttribute(),
-        structTypeExpr(
-          nilQualifier(),
-          structDecl(attrs, justName(n), dcls, location=n.location))),
+      -- Only declare the struct if it doesn't already have a definition
+      maybeDecl(
+        \ env::Decorated Env ->
+          null(lookupRefId(decorate n with {env = env;}.tagRefId, env)),
+        -- struct __name__ { ... };
+        typeExprDecl(
+          nilAttribute(),
+          structTypeExpr(
+            nilQualifier(),
+            structDecl(attrs, justName(n), dcls, location=n.location)))),
       catMaybes(
         map(
           \ c::Pair<String ValueItem> -> c.snd.typerep.maybeRefId,
