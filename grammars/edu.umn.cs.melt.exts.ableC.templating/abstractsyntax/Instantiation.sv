@@ -50,7 +50,7 @@ top::Expr ::= n::Name ts::TypeNames
   propagate substituted;
   top.pp = pp"ref ${n.pp}<${ppImplode(pp", ", ts.pps)}>";
   forwards to
-    directRefExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), location=top.location);
+    directRefExpr(name(templateMangledName(n.name, ts.typereps), location=top.location), location=top.location);
 }
 
 abstract production templateInstDirectCallExpr
@@ -59,7 +59,7 @@ top::Expr ::= n::Name ts::TypeNames a::Exprs
   propagate substituted;
   top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)}";
   forwards to
-    directCallExpr(name(templateMangledName(n.name, ts.typereps), location=builtin), a, location=top.location);
+    directCallExpr(name(templateMangledName(n.name, ts.typereps), location=top.location), a, location=top.location);
 }
 
 abstract production templateInstTypedefTypeExpr
