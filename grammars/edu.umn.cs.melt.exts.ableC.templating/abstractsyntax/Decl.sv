@@ -97,6 +97,11 @@ top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
   top.pp = ppConcat([
     pp"deferred struct ", ppAttributes(attrs), text(n.name), space(),
     braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
+  
+  -- Global environment also containing global defs from dcls
+  local augmentedGlobalEnv::Decorated Env =
+    addEnv(foldr(consDefs, nilDefs(), dcls.defs).globalDefs, globalEnv(top.env));
+  
   forwards to
     foldr(
       deferredDecl,
@@ -110,10 +115,12 @@ top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
           structTypeExpr(
             nilQualifier(),
             structDecl(attrs, justName(n), dcls, location=n.location)))),
-      catMaybes(
-        map(
-          \ c::Pair<String ValueItem> -> c.snd.typerep.maybeRefId,
-          foldr(consDefs, nilDefs(), dcls.localDefs).valueContribs)));
+      filter(
+        \ refId::String -> null(lookupRefId(refId, augmentedGlobalEnv)),
+        catMaybes(
+          map(
+            \ c::Pair<String ValueItem> -> c.snd.typerep.maybeRefId,
+            foldr(consDefs, nilDefs(), dcls.localDefs).valueContribs))));
 }
 
 abstract production templateFunctionDecl
