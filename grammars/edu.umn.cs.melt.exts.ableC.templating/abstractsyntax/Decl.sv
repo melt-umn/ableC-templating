@@ -98,6 +98,9 @@ top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
     pp"deferred struct ", ppAttributes(attrs), text(n.name), space(),
     braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
   
+  dcls.inStruct = true;
+  dcls.isLast = true; -- We don't know, but be conservative to avoid errors
+  
   -- Global environment also containing global defs from dcls
   local augmentedGlobalEnv::Decorated Env =
     addEnv(foldr(consDefs, nilDefs(), dcls.defs).globalDefs, globalEnv(top.env));
