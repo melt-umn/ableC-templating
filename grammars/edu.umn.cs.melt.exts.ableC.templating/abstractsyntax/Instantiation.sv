@@ -17,7 +17,7 @@ abstract production templateDirectCallExpr
 top::Expr ::= n::Name ts::TypeNames a::Exprs
 {
   propagate substituted;
-  top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)}";
+  top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)})";
   
   forwards to
     injectGlobalDeclsExpr(
@@ -57,7 +57,7 @@ abstract production templateInstDirectCallExpr
 top::Expr ::= n::Name ts::TypeNames a::Exprs
 {
   propagate substituted;
-  top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)}";
+  top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)})";
   forwards to
     directCallExpr(name(templateMangledName(n.name, ts.typereps), location=top.location), a, location=top.location);
 }
