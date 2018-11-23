@@ -1,5 +1,6 @@
 grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
+-- TODO: Avoid redecorating ts in all these productions by adding a decTypeNames production
 abstract production templateDirectRefExpr
 top::Expr ::= n::Name ts::TypeNames
 {
@@ -34,6 +35,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   
   -- templatedType forwards to resolved (forward.typerep here), so no interference.
   top.typerep = templatedType(q, n.name, ts.typereps, forward.typerep);
+  ts.env = globalEnv(top.env);
   
   forwards to
     injectGlobalDeclsTypeExpr(
@@ -49,6 +51,7 @@ top::Expr ::= n::Name ts::TypeNames
 {
   propagate substituted;
   top.pp = pp"ref ${n.pp}<${ppImplode(pp", ", ts.pps)}>";
+  ts.env = globalEnv(top.env);
   forwards to
     directRefExpr(name(templateMangledName(n.name, ts.typereps), location=top.location), location=top.location);
 }
@@ -58,6 +61,7 @@ top::Expr ::= n::Name ts::TypeNames a::Exprs
 {
   propagate substituted;
   top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)})";
+  ts.env = globalEnv(top.env);
   forwards to
     directCallExpr(name(templateMangledName(n.name, ts.typereps), location=top.location), a, location=top.location);
 }
@@ -67,6 +71,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
 {
   propagate substituted;
   top.pp = pp"${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", ts.pps)}>";
+  ts.env = globalEnv(top.env);
   forwards to
     typedefTypeExpr(q, name(templateMangledName(n.name, ts.typereps), location=builtin));
 }
@@ -127,7 +132,11 @@ top::Decl ::= n::Name ts::TypeNames
              nilStorageClass(), nilAttribute(),
              errorTypeExpr(localErrors),
              consDeclarator(
-               declarator(name(mangledName, location=builtin), baseTypeExpr(), nilAttribute(), nothingInitializer()),
+               declarator(
+                 name(mangledName, location=builtin),
+                 baseTypeExpr(),
+                 nilAttribute(),
+                 nothingInitializer()),
                nilDeclarator()))]))
     else decDecl(fwrd);
 }
