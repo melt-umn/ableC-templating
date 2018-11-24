@@ -23,8 +23,9 @@ top::Type ::= q::Qualifiers n::String args::[Type] resolved::Type
           consTypeName, nilTypeName(),
           map(\ t::Type -> typeName(t.baseTypeExpr, t.typeModifierExpr), args)))
     end;
-  
   top.typeModifierExpr = baseTypeExpr();
+  top.canonicalType =
+    templatedType(q, n, map(\ t::Type -> t.canonicalType, args), resolved.canonicalType);
   top.withoutTypeQualifiers =
     templatedType(nilQualifier(), n, args, resolved.withoutTypeQualifiers);
   top.withoutExtensionQualifiers =
