@@ -90,7 +90,7 @@ top::Decl ::= n::Name ts::TypeNames
     then n.templateLookupCheck
     else if !templateItem.isItemValue
     then [err(n.location, s"${n.name} is not a value")]
-    else if ts.count != length(templateItem.templateParams)
+    else if !templateItem.isItemError && ts.count != length(templateItem.templateParams)
     then [err(
             n.location,
             s"Wrong number of template parameters for ${n.name}, " ++
@@ -123,7 +123,7 @@ top::Decl ::= n::Name ts::TypeNames
   fwrd.returnType = nothing();
   
   forwards to
-    if containsErrorType(ts.typereps) || !null(localErrors)
+    if templateItem.isItemError || containsErrorType(ts.typereps) || !null(localErrors)
     then
       decls(
         foldDecl(
@@ -155,7 +155,7 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
     then n.templateLookupCheck
     else if !templateItem.isItemType
     then [err(n.location, s"${n.name} is not a type")]
-    else if ts.count != length(templateItem.templateParams)
+    else if !templateItem.isItemError && ts.count != length(templateItem.templateParams)
     then [err(
             n.location,
             s"Wrong number of template parameters for ${n.name}, " ++
@@ -190,7 +190,7 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
   fwrd.returnType = nothing();
   
   forwards to
-    if containsErrorType(ts.typereps) || !null(localErrors)
+    if templateItem.isItemError || containsErrorType(ts.typereps) || !null(localErrors)
     then
       decls(
         foldDecl(
