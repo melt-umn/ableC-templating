@@ -3,8 +3,16 @@ grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 synthesized attribute templateParams::[String];
 synthesized attribute decl::(Decl ::= Name);
 synthesized attribute isItemForwardDecl::Boolean;
+synthesized attribute isItemError::Boolean;
 
-closed nonterminal TemplateItem with templateParams, decl, sourceLocation, isItemValue, isItemType, isItemForwardDecl;
+closed nonterminal TemplateItem with templateParams, decl, sourceLocation, isItemValue, isItemType, isItemForwardDecl, isItemError;
+
+aspect default production
+top::TemplateItem ::=
+{
+  top.isItemForwardDecl = false;
+  top.isItemError = false;
+}
 
 abstract production templateItem
 top::TemplateItem ::= isItemTypedef::Boolean isItemForwardDecl::Boolean sourceLocation::Location params::[String] decl::(Decl ::= Name)
@@ -25,7 +33,7 @@ top::TemplateItem ::=
   top.sourceLocation = builtin;
   top.isItemValue = true;
   top.isItemType = true;
-  top.isItemForwardDecl = false;
+  top.isItemError = true;
 }
 
 synthesized attribute templates::Scopes<TemplateItem> occurs on Env;
