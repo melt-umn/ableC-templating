@@ -66,34 +66,64 @@ top::Decl ::= params::Names attrs::Attributes n::Name dcls::StructItemList
             decls(
               foldDecl([
                 -- maybeDecl {typedef __attribute__((refId("edu:umn:cs:melt:exts:ableC:templating:__name__"))) struct __name__ __name__;}
-                maybeValueDecl(
-                  mangledName.name,
-                  typedefDecls(
-                    consAttribute(
-                      gccAttribute(
-                        consAttrib(
-                          appliedAttrib(
-                            attribName(name("refId", location=builtin)),
-                            consExpr(
-                              stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${mangledName.name}\"", location=builtin),
-                              nilExpr())),
-                          nilAttrib())),
-                      nilAttribute()),
-                    tagReferenceTypeExpr(nilQualifier(), structSEU(), mangledName),
-                    consDeclarator(
-                      declarator(mangledName, baseTypeExpr(), nilAttribute(), nothingInitializer()),
-                      nilDeclarator()))),
-                -- struct __name__ { ... };
-                typeExprDecl(
-                  nilAttribute(),
-                  structTypeExpr(
-                    nilQualifier(),
-                    structDecl(attrs, justName(mangledName), dcls, location=n.location)))]))))]);
+                typedefDecls(
+                  consAttribute(
+                    gccAttribute(
+                      consAttrib(
+                        appliedAttrib(
+                          attribName(name("refId", location=builtin)),
+                          consExpr(
+                            stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${mangledName.name}\"", location=builtin),
+                            nilExpr())),
+                        nilAttrib())),
+                    nilAttribute()),
+                  tagReferenceTypeExpr(nilQualifier(), structSEU(), mangledName),
+                  consDeclarator(
+                    declarator(mangledName, baseTypeExpr(), nilAttribute(), nothingInitializer()),
+                    nilDeclarator())),
+                -- Defer the struct declaration until all components are complete types
+                deferredStructDecl(attrs, mangledName, dcls)]))))]);
   
   forwards to
     if !null(localErrors)
     then decls(consDecl(warnDecl(localErrors), consDecl(fwrd, nilDecl())))
     else fwrd;
+}
+
+abstract production deferredStructDecl
+top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
+{
+  propagate substituted;
+  top.pp = ppConcat([
+    pp"deferred struct ", ppAttributes(attrs), text(n.name), space(),
+    braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
+  
+  dcls.inStruct = true;
+  dcls.isLast = true; -- We don't know, but be conservative to avoid errors
+  
+  -- Global environment also containing global defs from dcls
+  local augmentedGlobalEnv::Decorated Env =
+    addEnv(foldr(consDefs, nilDefs(), dcls.defs).globalDefs, globalEnv(top.env));
+  
+  forwards to
+    foldr(
+      deferredDecl,
+      -- Only declare the struct if it doesn't already have a definition
+      maybeDecl(
+        \ env::Decorated Env ->
+          null(lookupRefId(decorate n with {env = env;}.tagRefId, env)),
+        -- struct __name__ { ... };
+        typeExprDecl(
+          nilAttribute(),
+          structTypeExpr(
+            nilQualifier(),
+            structDecl(attrs, justName(n), dcls, location=n.location)))),
+      filter(
+        \ refId::String -> null(lookupRefId(refId, augmentedGlobalEnv)),
+        catMaybes(
+          map(
+            \ c::Pair<String ValueItem> -> c.snd.typerep.maybeRefId,
+            foldr(consDefs, nilDefs(), dcls.localDefs).valueContribs))));
 }
 
 abstract production templateFunctionDecl
@@ -142,7 +172,7 @@ aspect production functionDecl
 top::FunctionDecl ::= storage::StorageClasses  fnquals::SpecialSpecifiers  bty::BaseTypeExpr mty::TypeModifierExpr  n::Name  attrs::Attributes  ds::Decls  body::Stmt
 {
   local newStorageClasses::StorageClasses =
-    if !storage.containsStatic
+    if !storage.isStatic
     then consStorageClass(staticStorageClass(), storage)
     else storage;
   top.instFunctionDecl =
@@ -198,30 +228,4 @@ aspect production nilName
 top::Names ::=
 {
   top.typeParameterErrors = [];
-}
-
-synthesized attribute containsStatic::Boolean occurs on StorageClasses, StorageClass;
-
-aspect production consStorageClass
-top::StorageClasses ::= h::StorageClass  t::StorageClasses
-{
-  top.containsStatic = h.containsStatic || t.containsStatic;
-}
-
-aspect production nilStorageClass
-top::StorageClasses ::=
-{
-  top.containsStatic = false;
-}
-
-aspect default production
-top::StorageClass ::=
-{
-  top.containsStatic = false;
-}
-
-aspect production staticStorageClass
-top::StorageClass ::=
-{
-  top.containsStatic = true;
 }
