@@ -1,16 +1,17 @@
 grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
--- TODO: Avoid redecorating ts in all these productions by adding a decTypeNames production
 abstract production templateDirectRefExpr
 top::Expr ::= n::Name ts::TypeNames
 {
   propagate substituted;
   top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>";
   
+  ts.env = globalEnv(top.env);
+  
   forwards to
     injectGlobalDeclsExpr(
-      consDecl(templateExprInstDecl(n, ts), nilDecl()),
-      templateInstDirectRefExpr(n, ts, location=top.location),
+      consDecl(templateExprInstDecl(n, decTypeNames(ts)), nilDecl()),
+      directRefExpr(name(templateMangledName(n.name, ts.typereps), location=top.location), location=top.location),
       location=top.location);
 }
 
@@ -20,10 +21,12 @@ top::Expr ::= n::Name ts::TypeNames a::Exprs
   propagate substituted;
   top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)})";
   
+  ts.env = globalEnv(top.env);
+  
   forwards to
     injectGlobalDeclsExpr(
-      consDecl(templateExprInstDecl(n, ts), nilDecl()),
-      templateInstDirectCallExpr(n, ts, a, location=top.location),
+      consDecl(templateExprInstDecl(n, decTypeNames(ts)), nilDecl()),
+      directCallExpr(name(templateMangledName(n.name, ts.typereps), location=top.location), a, location=top.location),
       location=top.location);
 }
 
@@ -35,45 +38,13 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   
   -- templatedType forwards to resolved (forward.typerep here), so no interference.
   top.typerep = templatedType(q, n.name, ts.typereps, forward.typerep);
+  
   ts.env = globalEnv(top.env);
   
   forwards to
     injectGlobalDeclsTypeExpr(
-      consDecl(templateTypeExprInstDecl(q, n, ts), nilDecl()),
-      templateInstTypedefTypeExpr(q, n, ts));
-}
-
--- These are needed to compute the mangled name in the env containing defs from
--- the instantiation, to avoid redecorating the type arguments and regenerating
--- refIds, etc.
-abstract production templateInstDirectRefExpr
-top::Expr ::= n::Name ts::TypeNames
-{
-  propagate substituted;
-  top.pp = pp"ref ${n.pp}<${ppImplode(pp", ", ts.pps)}>";
-  ts.env = globalEnv(top.env);
-  forwards to
-    directRefExpr(name(templateMangledName(n.name, ts.typereps), location=top.location), location=top.location);
-}
-
-abstract production templateInstDirectCallExpr
-top::Expr ::= n::Name ts::TypeNames a::Exprs
-{
-  propagate substituted;
-  top.pp = pp"${n.pp}<${ppImplode(pp", ", ts.pps)}>(${ppImplode(pp", ", a.pps)})";
-  ts.env = globalEnv(top.env);
-  forwards to
-    directCallExpr(name(templateMangledName(n.name, ts.typereps), location=top.location), a, location=top.location);
-}
-
-abstract production templateInstTypedefTypeExpr
-top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
-{
-  propagate substituted;
-  top.pp = pp"${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", ts.pps)}>";
-  ts.env = globalEnv(top.env);
-  forwards to
-    typedefTypeExpr(q, name(templateMangledName(n.name, ts.typereps), location=builtin));
+      consDecl(templateTypeExprInstDecl(q, n, decTypeNames(ts)), nilDecl()),
+      typedefTypeExpr(q, name(templateMangledName(n.name, ts.typereps), location=builtin)));
 }
 
 abstract production templateExprInstDecl
@@ -109,7 +80,7 @@ top::Decl ::= n::Name ts::TypeNames
     decls(
       foldDecl(
         ts.decls ++
-        if !null(lookupValue(mangledName, top.env))
+        if !null(lookupValue(mangledName, addEnv(ts.defs, ts.env)))
         then []
         else
           [substDecl(
@@ -175,7 +146,7 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
     decls(
       foldDecl(
         ts.decls ++
-        if !null(lookupValue(mangledName, top.env))
+        if !null(lookupValue(mangledName, addEnv(ts.defs, ts.env)))
         then []
         else
           [substDecl(
@@ -206,6 +177,23 @@ top::Decl ::= q::Qualifiers n::Name ts::TypeNames
                  nothingInitializer()),
                nilDeclarator()))]))
     else decDecl(fwrd);
+}
+
+abstract production decTypeNames
+top::TypeNames ::= ts::Decorated TypeNames
+{
+  top.host = ts.host;
+  top.lifted = ts.lifted;
+  top.pps = ts.pps;
+  top.typereps = ts.typereps;
+  top.count = ts.count;
+  top.errors := ts.errors;
+  top.globalDecls := ts.globalDecls;
+  top.decls = ts.decls;
+  top.defs := ts.defs;
+  top.freeVariables := ts.freeVariables;
+  
+  forwards to new(ts);
 }
 
 function templateMangledName
