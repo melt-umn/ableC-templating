@@ -6,21 +6,21 @@ imports edu:umn:cs:melt:ableC:concretesyntax;
 imports edu:umn:cs:melt:ableC:concretesyntax:lexerHack as lh;
 imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:lexerHack as lh;
 
-imports edu:umn:cs:melt:ableC:abstractsyntax as ast;
+imports edu:umn:cs:melt:ableC:abstractsyntax:host as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typeParameters;
 
 marking terminal Using_t 'using' lexer classes {Ckeyword};
 
 concrete production usingDeclaration_c
-top::ExternalDeclaration_c ::= 'using' id::Identifier_t '<' params::TemplateParameters_c '>' '=' ty::TypeName_c ';'
+top::Declaration_c ::= 'using' id::Identifier_c '<' params::TypeParameters_c '>' '=' ty::TypeName_c ';'
 {
-  top.ast = templateTypeDecl(params.ast, ast:fromId(id), ty.ast);
+  top.ast = templateTypeDecl(params.ast, id.ast, ty.ast);
 }
 action {
   context = lh:closeScope(context); -- Opened by TemplateDecl_c
-  context = lh:addTemplateTypenamesToScope([ast:fromId(id)], context);
+  context = lh:addTypenamesToScope([id.ast], context);
 }

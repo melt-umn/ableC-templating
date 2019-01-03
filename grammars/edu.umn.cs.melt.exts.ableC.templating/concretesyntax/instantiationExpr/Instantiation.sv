@@ -2,7 +2,8 @@ grammar edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationExpr;
 
 imports silver:langutil only ast;
 
-imports edu:umn:cs:melt:ableC:abstractsyntax;
+imports edu:umn:cs:melt:ableC:abstractsyntax:host;
+imports edu:umn:cs:melt:ableC:abstractsyntax:construction;
 imports edu:umn:cs:melt:ableC:concretesyntax;
 imports edu:umn:cs:melt:ableC:concretesyntax:lexerHack as lh;
 
@@ -10,38 +11,28 @@ imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:lexerHack as lh;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-marking terminal TemplateIdentifier_t /[A-Za-z_\$][A-Za-z_0-9\$]*/ lexer classes {Cidentifier};
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
 
-function fromTemplateId
-Name ::= n::TemplateIdentifier_t
-{
-  return name(n.lexeme, location=n.location);
+terminal TemplateLParen_t '(';
+
+disambiguate TemplateLParen_t, LParen_t {
+  pluck TemplateLParen_t;
 }
 
-concrete production templateDeclRefExpr_c
-top::PrimaryExpr_c ::= id::TemplateIdentifier_t '<' params::TypeNames_c '>'
+concrete production templateDirectRefExpr_c
+top::PrimaryExpr_c ::= 'inst' id::Identifier_c '<' params::TypeNames_c '>'
 {
-  top.ast = templateDeclRefExpr(fromTemplateId(id), params.ast, location=top.location);
+  top.ast = templateDirectRefExpr(id.ast, params.ast, location=top.location);
 }
 
-disambiguate TemplateIdentifier_t, Identifier_t, TypeName_t
+concrete production templateDirectCallExpr_c
+top::PrimaryExpr_c ::= 'inst' id::Identifier_c '<' params::TypeNames_c '>' '(' a::ArgumentExprList_c ')'
 {
-  pluck
-    case lookupBy(stringEq, lexeme, head(context)) of
-    | just(lh:templateTypenameType_c()) -> TemplateIdentifier_t
-    | just(lh:identType_c()) -> Identifier_t
-    | just(lh:typenameType_c()) -> TypeName_t
-    | nothing() -> Identifier_t
-    | it -> error(s"Unexpected lookup result for ${lexeme} in disambiguation function for TemplateIdentifier_t, Identifier_t, TypeName_t: ${hackUnparse(it)}")
-    end;
+  top.ast = templateDirectCallExpr(id.ast, params.ast, foldExpr(a.ast), location=top.location);
 }
-disambiguate TemplateIdentifier_t, Identifier_t
+
+concrete production templateDirectCallNoArgsExpr_c
+top::PrimaryExpr_c ::= 'inst' id::Identifier_c '<' params::TypeNames_c '>' '(' ')'
 {
-  pluck
-    case lookupBy(stringEq, lexeme, concat(context)) of
-    | just(lh:templateIdentType_c()) -> TemplateIdentifier_t
-    | just(lh:identType_c()) -> Identifier_t
-    | nothing() -> Identifier_t
-    | it -> error(s"Unexpected lookup result for ${lexeme} in disambiguation function for TemplateIdentifier_t, Identifier_t: ${hackUnparse(it)}")
-    end;
+  top.ast = templateDirectCallExpr(id.ast, params.ast, nilExpr(), location=top.location);
 }

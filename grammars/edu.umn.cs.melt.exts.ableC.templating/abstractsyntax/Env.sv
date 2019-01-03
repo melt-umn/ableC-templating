@@ -1,22 +1,27 @@
 grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-imports silver:util:raw:treemap as tm;
-
-synthesized attribute templateParams::[Name];
-synthesized attribute decl::Decl;
-synthesized attribute isItemValue::Boolean;
+synthesized attribute templateParams::[String];
+synthesized attribute decl::(Decl ::= Name);
 synthesized attribute isItemForwardDecl::Boolean;
+synthesized attribute isItemError::Boolean;
 
-nonterminal TemplateItem with templateParams, decl, sourceLocation, isItemValue, isItemTypedef, isItemForwardDecl;
+closed nonterminal TemplateItem with templateParams, decl, sourceLocation, isItemValue, isItemType, isItemForwardDecl, isItemError;
+
+aspect default production
+top::TemplateItem ::=
+{
+  top.isItemForwardDecl = false;
+  top.isItemError = false;
+}
 
 abstract production templateItem
-top::TemplateItem ::= isItemTypedef::Boolean isItemForwardDecl::Boolean sourceLocation::Location params::[Name] decl::Decl
+top::TemplateItem ::= isItemTypedef::Boolean isItemForwardDecl::Boolean sourceLocation::Location params::[String] decl::(Decl ::= Name)
 {
   top.templateParams = params;
   top.decl = decl;
   top.sourceLocation = sourceLocation;
   top.isItemValue = !isItemTypedef;
-  top.isItemTypedef = isItemTypedef;
+  top.isItemType = isItemTypedef;
   top.isItemForwardDecl = isItemForwardDecl;
 }
 
@@ -24,35 +29,40 @@ abstract production errorTemplateItem
 top::TemplateItem ::= 
 {
   top.templateParams = [];
-  top.decl = decls(nilDecl());
+  top.decl = \ n::Name -> decls(nilDecl());
   top.sourceLocation = builtin;
-  top.isItemValue = false;
-  top.isItemTypedef = false;
-  top.isItemForwardDecl = false;
+  top.isItemValue = true;
+  top.isItemType = true;
+  top.isItemError = true;
 }
 
-synthesized attribute templates::Scope<TemplateItem> occurs on Env;
+synthesized attribute templates::Scopes<TemplateItem> occurs on Env;
 synthesized attribute templateContribs::Contribs<TemplateItem> occurs on Defs, Def;
 
 aspect production emptyEnv_i
 top::Env ::=
 {
-  top.templates = [tm:empty(compareString)];
+  top.templates = emptyScope();
 }
 aspect production addEnv_i
 top::Env ::= d::Defs  e::Decorated Env
 {
-  top.templates = augmentGlobalScope_i(gd.templateContribs, augmentScope_i(d.templateContribs, e.templates));
+  top.templates = addGlobalScope(gd.templateContribs, addScope(d.templateContribs, e.templates));
 }
-aspect production openScope_i
+aspect production openScopeEnv_i
 top::Env ::= e::Decorated Env
 {
-  top.templates = tm:empty(compareString) :: e.templates;
+  top.templates = openScope(e.templates);
 }
 aspect production globalEnv_i
 top::Env ::= e::Decorated Env
 {
-  top.templates = [last(e.templates)];
+  top.templates = globalScope(e.templates);
+}
+aspect production nonGlobalEnv_i
+top::Env ::= e::Decorated Env
+{
+  top.templates = nonGlobalScope(e.templates);
 }
 
 aspect production nilDefs
@@ -81,7 +91,7 @@ top::Def ::= s::String  t::TemplateItem
 function lookupTemplate
 [TemplateItem] ::= n::String  e::Decorated Env
 {
-  return readScope_i(n, e.templates);
+  return lookupScope(n, e.templates);
 }
 
 synthesized attribute templateItem::Decorated TemplateItem occurs on Name;
