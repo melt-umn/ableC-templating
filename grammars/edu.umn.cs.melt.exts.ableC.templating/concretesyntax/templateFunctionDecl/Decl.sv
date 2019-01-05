@@ -21,7 +21,7 @@ top::Declaration_c ::= 'template' '<' params::TypeParameters_c '>' dcl::Template
 }
 action {
   context = closeScope(context); -- Opened by TemplateInitialFunctionDefinition_c
-  context = closeScope(context); -- Opened by TemplateParams_c
+  context = closeScope(context); -- Opened by TypeParameters_c
   context = addIdentsToScope([dcl.declaredIdent], TemplateIdentifier_t, context);
 }
 

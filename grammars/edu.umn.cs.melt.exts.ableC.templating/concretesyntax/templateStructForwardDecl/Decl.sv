@@ -23,6 +23,6 @@ top::Declaration_c ::= 'template' d::TemplateInitialStructDeclaration_c ';'
   top.ast = ast:decls(ast:nilDecl());
 }
 action {
-  context = closeScope(context); -- Opened by TemplateParams_c
+  context = closeScope(context); -- Opened by TypeParameters_c
   context = addIdentsToScope([d.declaredIdent], TemplateTypeName_t, context);
 }

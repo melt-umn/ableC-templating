@@ -23,9 +23,9 @@ top::Declaration_c ::= 'template' '<' params::TypeParameters_c '>' ds::Declarati
   local dcls :: ast:Declarators =
     ast:foldDeclarator(idcl.ast);
   
-  top.ast = ast:decls(ast:nilDecl()); -- TODO: Effectively ignoring anything about the declaration
+  top.ast = ast:decls(ast:nilDecl()); -- TODO: Ignoring type declarations that are part of the declaration
 }
 action {
-  context = closeScope(context); -- Opened by TemplateParams_c
+  context = closeScope(context); -- Opened by TypeParameters_c
   context = addIdentsToScope(idcl.declaredIdents, TemplateIdentifier_t, context);
 }

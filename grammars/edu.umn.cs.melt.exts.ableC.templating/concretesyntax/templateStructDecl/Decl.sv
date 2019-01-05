@@ -21,7 +21,7 @@ top::Declaration_c ::= 'template' d::TemplateInitialStructDeclaration_c '{' ss::
   top.ast = d.ast(ast:foldStructItem(ss.ast));
 }
 action {
-  context = closeScope(context); -- Opened by TemplateParams_c
+  context = closeScope(context); -- Opened by TypeParameters_c
   context = addIdentsToScope([d.declaredIdent], TemplateTypeName_t, context);
 }
 

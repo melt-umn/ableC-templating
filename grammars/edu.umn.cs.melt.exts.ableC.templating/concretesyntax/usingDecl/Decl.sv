@@ -20,6 +20,6 @@ top::Declaration_c ::= 'using' id::Identifier_c '<' params::TypeParameters_c '>'
   top.ast = templateTypeDecl(params.ast, id.ast, ty.ast);
 }
 action {
-  context = closeScope(context); -- Opened by TemplateDecl_c
+  context = closeScope(context); -- Opened by TypeParameters_c
   context = addIdentsToScope([id.ast], TemplateTypeName_t, context);
 }
