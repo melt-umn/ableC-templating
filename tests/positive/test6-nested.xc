@@ -7,27 +7,27 @@ struct ptr {
 };
 
 template<a>
-inst ptr<a> new(a x) {
-  inst ptr<a> res = {malloc(sizeof(a))};
+ptr<a> new(a x) {
+  ptr<a> res = {malloc(sizeof(a))};
   *res.contents = x;
   return res;
 }
 
 template<a>
-a deref(inst ptr<a> x) {
+a deref(ptr<a> x) {
   return *(x.contents);
 }
 
 template<a>
-void delete(inst ptr<a> x) {
+void delete(ptr<a> x) {
   free(x.contents);
 }
 
 int main() {
-  inst ptr<inst ptr<int>> x = inst new<inst ptr<int>>(inst new<int>(42));
-  int res = inst deref<int>(inst deref<inst ptr<int>>(x));
+  ptr<ptr<int>> x = new<ptr<int>>(new<int>(42));
+  int res = deref<int>(deref<ptr<int>>(x));
   printf("%d\n", res);
-  inst delete<int>(inst deref<inst ptr<int>>(x));
-  inst delete<inst ptr<int>>(x);
+  delete<int>(deref<ptr<int>>(x));
+  delete<ptr<int>>(x);
   return res != 42;
 }

@@ -9,8 +9,8 @@ a max(a x, a y) {
 }
 
 int main() {
-  int x = inst max<int>(2, 4);
-  float y = inst max<float>(2.45f, 4.2f);
+  int x = max<int>(2, 4);
+  float y = max<float>(2.45f, 4.2f);
 
   printf("%d\n", x);
   printf("%f\n", y);
