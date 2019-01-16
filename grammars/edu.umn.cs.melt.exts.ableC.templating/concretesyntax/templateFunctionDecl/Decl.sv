@@ -3,11 +3,11 @@ grammar edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateFunctionDec
 imports silver:langutil;
 
 imports edu:umn:cs:melt:ableC:concretesyntax;
-imports edu:umn:cs:melt:ableC:concretesyntax:lexerHack as lh;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax:host as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
+imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationExpr;
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
@@ -20,12 +20,13 @@ top::Declaration_c ::= 'template' '<' params::TypeParameters_c '>' dcl::Template
   dcl.givenStmt = s.ast;
 }
 action {
-  context = lh:closeScope(context); -- Opened by TemplateInitialFunctionDefinition_c
-  context = lh:closeScope(context); -- Opened by TemplateParams_c
+  context = closeScope(context); -- Opened by TemplateInitialFunctionDefinition_c
+  context = closeScope(context); -- Opened by TypeParameters_c
+  context = addIdentsToScope([dcl.declaredIdent], TemplateIdentifier_t, context);
 }
 
 -- Duplicated from InitialFunctionDefinition_c due to MDA requirments
-nonterminal TemplateInitialFunctionDefinition_c with location, ast<ast:FunctionDecl>, givenStmt;
+nonterminal TemplateInitialFunctionDefinition_c with location, ast<ast:FunctionDecl>, declaredIdent, givenStmt;
 concrete productions top::TemplateInitialFunctionDefinition_c
 | ds::DeclarationSpecifiers_c  d::Declarator_c  l::InitiallyUnqualifiedDeclarationList_c
     {
@@ -59,11 +60,12 @@ concrete productions top::TemplateInitialFunctionDefinition_c
 
       top.ast = 
         ast:functionDecl(ast:foldStorageClass(ds.storageClass), specialSpecifiers, bt, mt, d.declaredIdent, ds.attributes, ast:foldDecl(l.ast), top.givenStmt);
+      top.declaredIdent = d.declaredIdent;
     }
     action {
       -- Function are annoying because we have to open a scope, then add the
       -- parameters, and close it after the brace.
-      context = lh:beginFunctionScope(d.declaredIdent, d.declaredParamIdents, context);
+      context = beginFunctionScope(d.declaredIdent, TemplateIdentifier_t, d.declaredParamIdents, Identifier_t, context);
     }
 | d::Declarator_c  l::InitiallyUnqualifiedDeclarationList_c
     {
@@ -91,6 +93,7 @@ concrete productions top::TemplateInitialFunctionDefinition_c
         | _, mt -> mt
         end;
 
+      top.declaredIdent = d.declaredIdent;
       top.ast = 
         ast:functionDecl(ast:nilStorageClass(), ast:nilSpecialSpecifier(), bt, mt, d.declaredIdent, ast:nilAttribute(), ast:foldDecl(l.ast), top.givenStmt);
     }
@@ -98,5 +101,5 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       -- Unfortunate duplication. This production is necessary for K&R compatibility
       -- We can't make it a proper optional nonterminal, since that requires a reduce far too early.
       -- (i.e. LALR conflicts)
-      context = lh:beginFunctionScope(d.declaredIdent, d.declaredParamIdents, context);
+      context = beginFunctionScope(d.declaredIdent, TemplateIdentifier_t, d.declaredParamIdents, Identifier_t, context);
     }

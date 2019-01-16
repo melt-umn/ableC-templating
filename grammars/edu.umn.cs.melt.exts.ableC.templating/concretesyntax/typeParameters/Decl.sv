@@ -3,7 +3,6 @@ grammar edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typeParameters;
 imports silver:langutil;
 
 imports edu:umn:cs:melt:ableC:concretesyntax;
-imports edu:umn:cs:melt:ableC:concretesyntax:lexerHack as lh;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax:host as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
@@ -20,5 +19,5 @@ top::TypeParameters_c ::= params::Names_c
   top.ast = ast:foldName(params.ast);
 }
 action {
-  context = lh:addTypenamesToScope(params.ast, lh:openScope(context));
+  context = addIdentsToScope(params.ast, TypeName_t, openScope(context));
 }

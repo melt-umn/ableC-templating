@@ -7,5 +7,5 @@ struct foo {
 struct bar;
 
 int main() {
-  inst foo<struct bar> f;
+  foo<struct bar> f;
 }

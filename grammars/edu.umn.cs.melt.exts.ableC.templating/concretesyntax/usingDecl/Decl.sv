@@ -3,11 +3,11 @@ grammar edu:umn:cs:melt:exts:ableC:templating:concretesyntax:usingDecl;
 imports silver:langutil;
 
 imports edu:umn:cs:melt:ableC:concretesyntax;
-imports edu:umn:cs:melt:ableC:concretesyntax:lexerHack as lh;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax:host as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
+imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeExpr;
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typeParameters;
@@ -20,6 +20,6 @@ top::Declaration_c ::= 'using' id::Identifier_c '<' params::TypeParameters_c '>'
   top.ast = templateTypeDecl(params.ast, id.ast, ty.ast);
 }
 action {
-  context = lh:closeScope(context); -- Opened by TemplateDecl_c
-  context = lh:addTypenamesToScope([id.ast], context);
+  context = closeScope(context); -- Opened by TypeParameters_c
+  context = addIdentsToScope([id.ast], TemplateTypeName_t, context);
 }

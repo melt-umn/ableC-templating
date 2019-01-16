@@ -11,8 +11,16 @@ copper_mda testTemplateStructDecl(ablecParser) {
   edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructDecl;
 }
 
+copper_mda testTemplateStructForwardDecl(ablecParser) {
+  edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructForwardDecl;
+}
+
 copper_mda testTemplateFunctionDecl(ablecParser) {
   edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateFunctionDecl;
+}
+
+copper_mda testTemplateFunctionForwardDecl(ablecParser) {
+  edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateFunctionForwardDecl;
 }
 
 copper_mda testUsingDecl(ablecParser) {
