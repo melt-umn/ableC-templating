@@ -26,8 +26,8 @@ top::Decl ::= params::Names n::Name ty::TypeName
     defsDecl([
       templateDef(
         n.name,
-        templateItem(
-          true, false, n.location, params.names,
+        typeTemplateItem(
+          n.location, params.names,
           \ mangledName::Name ->
             typedefDecls(
               nilAttribute(),
@@ -60,8 +60,8 @@ top::Decl ::= params::Names attrs::Attributes n::Name dcls::StructItemList
     defsDecl([
       templateDef(
         n.name,
-        templateItem(
-          true, false, n.location, params.names,
+        typeTemplateItem(
+          n.location, params.names,
           \ mangledName::Name ->
             decls(
               foldDecl([
@@ -142,12 +142,7 @@ top::Decl ::= params::Names d::FunctionDecl
       end;
   
   local fwrd::Decl =
-    defsDecl(
-      [templateDef(
-         d.name,
-         templateItem(
-           false, false, d.sourceLocation, params.names,
-           instFunctionDeclaration(_, d)))]);
+    defsDecl([templateDef(d.name, functionTemplateItem(d.sourceLocation, params.names, d))]);
   
   forwards to
     if !null(localErrors)
@@ -167,6 +162,7 @@ top::Decl ::= mangledName::Name decl::FunctionDecl
 
 inherited attribute givenMangledName::Name occurs on FunctionDecl;
 synthesized attribute instFunctionDecl::Decl occurs on FunctionDecl;
+synthesized attribute maybeParameters::Maybe<Parameters> occurs on FunctionDecl;
 
 aspect production functionDecl
 top::FunctionDecl ::= storage::StorageClasses  fnquals::SpecialSpecifiers  bty::BaseTypeExpr mty::TypeModifierExpr  n::Name  attrs::Attributes  ds::Decls  body::Stmt
@@ -192,12 +188,20 @@ top::FunctionDecl ::= storage::StorageClasses  fnquals::SpecialSpecifiers  bty::
             | functionTypeExprWithoutArgs(_, _, _) -> mty
             | _ -> error("mty should always be a functionTypeExpr")
             end, top.givenMangledName, attrs, ds, body))]));
+  
+  top.maybeParameters =
+    case mty of
+    | functionTypeExprWithArgs(_, params, _, _) -> just(params)
+    | functionTypeExprWithoutArgs(_, _, _) -> nothing()
+    | _ -> error("mty should always be a functionTypeExpr")
+    end;
 }
 
 aspect production badFunctionDecl
 top::FunctionDecl ::= msg::[Message]
 {
   top.instFunctionDecl = functionDeclaration(top);
+  top.maybeParameters = nothing();
 }
 
 function directTypeParameters
