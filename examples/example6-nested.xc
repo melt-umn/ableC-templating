@@ -24,8 +24,8 @@ void delete(ptr<a> x) {
 }
 
 int main() {
-  ptr<ptr<int>> x = new<ptr<int>>(new<int>(42));
-  printf("%d\n", deref<int>(deref<ptr<int>>(x)));
-  delete<int>(deref<ptr<int>>(x));
-  delete<ptr<int>>(x);
+  ptr<ptr<int>> x = new(new(42));
+  printf("%d\n", deref(deref(x)));
+  delete(deref(x));
+  delete(x);
 }

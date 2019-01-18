@@ -1,5 +1,7 @@
 grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
+import core:monad;
+
 abstract production templateDirectRefExpr
 top::Expr ::= n::Name ts::TypeNames
 {
@@ -36,6 +38,68 @@ top::Expr ::= n::Name ts::TypeNames a::Exprs
       location=top.location);
 }
 
+abstract production templateInferredDirectCallExpr
+top::Expr ::= n::Name a::Exprs
+{
+  propagate substituted;
+  top.pp = pp"${n.pp}(${ppImplode(pp", ", a.pps)})";
+  
+  local templateItem::Decorated TemplateItem = n.templateItem;
+  local inferredTypeArguments::Maybe<[Type]> =
+    do (bindMaybe, returnMaybe) {
+      params::Parameters <- templateItem.maybeParameters;
+      inferredTypes::[Pair<String Type>] =
+        decorate params with {
+          env = top.env;
+          returnType = top.returnType;
+          position = 0;
+          argumentTypes = a.typereps;
+        }.inferredTypes;
+      foldr(
+        bindMaybeSwapped, returnMaybe([]),
+        map(
+          \ n::String ->
+            \ rest::[Type] ->
+              do (bindMaybe, returnMaybe) {
+                t :: Type <- lookupBy(stringEq, n, inferredTypes);
+                return t :: rest;
+              },
+          templateItem.templateParams));
+    };
+  
+  local directErrors::[Message] =
+    (if !null(n.templateLookupCheck)
+     then n.templateLookupCheck
+     else if !templateItem.isItemValue
+     then [err(n.location, s"${n.name} is not a value")]
+     else []) ++
+    a.errors;
+  local localErrors::[Message] =
+    if !null(directErrors)
+    then directErrors
+    else if !inferredTypeArguments.isJust || containsErrorType(inferredTypeArguments.fromJust)
+    then
+      [err(
+         top.location,
+         s"Template parameter inference failed for ${n.name}(${implode(", ", map(showType, a.typereps))})")]
+    else [];
+  
+  local mangledName::String = templateMangledName(n.name, inferredTypeArguments.fromJust);
+  
+  local fwrd::Expr =
+    injectGlobalDeclsExpr(
+      foldDecl(
+        -- Optimization to avoid re-doing instantiations, mitigating exponential performance blowup
+        -- from re-decorating a.
+        if !null(lookupValue(mangledName, addEnv(globalDeclsDefs(a.globalDecls), a.env)))
+        then map(decDecl, a.globalDecls)
+        else [templateExprInstDecl(n, inferredTypeArguments.fromJust)]),
+      directCallExpr(name(mangledName, location=top.location), a, location=top.location),
+      location=top.location);
+  
+  forwards to mkErrorCheck(localErrors, fwrd);
+}
+
 abstract production templateTypedefTypeExpr
 top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
 {
@@ -44,6 +108,37 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name ts::TypeNames
   
   -- templatedType forwards to resolved (forward.typerep here), so no interference.
   top.typerep = templatedType(q, n.name, ts.typereps, forward.typerep);
+  
+  -- Better template parameter inference, non-interfering since it's not an error if
+  -- we try to infer on the forward instead.
+  top.inferredTypes =
+    case top.argumentType of
+    | templatedType(_, n1, _, _) ->
+      if n.name == n1 then ts.inferredTypes else forwardInferredTypes
+    | _ -> forwardInferredTypes
+    end;
+  ts.argumentTypes =
+    case top.argumentType of
+    | templatedType(_, n1, args, _) -> if n.name == n1 then args else []
+    | _ -> []
+    end;
+  -- Also try inferring on the transformation, if this is a templated type definition
+  local templateItem::Decorated TemplateItem = n.templateItem;
+  local forwardTypeName::TypeName =
+    substTypeName(
+      zipWith(
+        typedefSubstitution,
+        templateItem.templateParams,
+        map(directTypeExpr, ts.typereps)),
+      case templateItem of templateTypeTemplateItem(_, _, ty) -> ty end);
+  forwardTypeName.env = globalEnv(top.env);
+  forwardTypeName.returnType = nothing();
+  forwardTypeName.argumentType = top.argumentType;
+  local forwardInferredTypes::[Pair<String Type>] =
+    case templateItem of
+    | templateTypeTemplateItem(_, _, _) -> forwardTypeName.inferredTypes
+    | _ -> []
+    end;
   
   ts.env = globalEnv(top.env);
   
@@ -194,3 +289,11 @@ Boolean ::= ts::[Type]
       \ a::Boolean b::Boolean -> a || b, false,
       map(\ t::Type -> case t of errorType() -> true | _ -> false end, ts));
 }
+
+-- Bind paramters are backwards, ugh.
+function bindMaybeSwapped
+Maybe<b> ::= x::(Maybe<b> ::= a) y::Maybe<a>
+{
+  return bindMaybe(y, x);
+}
+

@@ -23,18 +23,7 @@ top::Decl ::= params::Names n::Name ty::TypeName
     else n.templateRedeclarationCheck ++ params.typeParameterErrors;
   
   local fwrd::Decl =
-    defsDecl([
-      templateDef(
-        n.name,
-        typeTemplateItem(
-          n.location, params.names,
-          \ mangledName::Name ->
-            typedefDecls(
-              nilAttribute(),
-              ty.bty,
-              consDeclarator(
-                declarator(mangledName, ty.mty, nilAttribute(), nothingInitializer()),
-                nilDeclarator()))))]);
+    defsDecl([templateDef(n.name, templateTypeTemplateItem(n.location, params.names, ty))]);
   
   forwards to
     if !null(localErrors)

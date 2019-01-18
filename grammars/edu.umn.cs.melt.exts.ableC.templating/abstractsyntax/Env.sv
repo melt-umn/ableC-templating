@@ -33,6 +33,22 @@ top::TemplateItem ::= sourceLocation::Location params::[String] decl::(Decl ::= 
   top.isItemValue = true;
 }
 
+abstract production templateTypeTemplateItem
+top::TemplateItem ::= sourceLocation::Location params::[String] ty::TypeName
+{
+  top.templateParams = params;
+  top.decl =
+    \ mangledName::Name ->
+      typedefDecls(
+        nilAttribute(),
+        ty.bty,
+        consDeclarator(
+          declarator(mangledName, ty.mty, nilAttribute(), nothingInitializer()),
+          nilDeclarator()));
+  top.sourceLocation = sourceLocation;
+  top.isItemType = true;
+}
+
 abstract production functionTemplateItem
 top::TemplateItem ::= sourceLocation::Location params::[String] decl::Decorated FunctionDecl
 {

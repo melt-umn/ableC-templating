@@ -24,10 +24,10 @@ void delete(ptr<a> x) {
 }
 
 int main() {
-  ptr<ptr<int>> x = new<ptr<int>>(new<int>(42));
-  int res = deref<int>(deref<ptr<int>>(x));
+  ptr<ptr<int>> x = new(new(42));
+  int res = deref(deref(x));
   printf("%d\n", res);
-  delete<int>(deref<ptr<int>>(x));
-  delete<ptr<int>>(x);
+  delete(deref(x));
+  delete(x);
   return res != 42;
 }
