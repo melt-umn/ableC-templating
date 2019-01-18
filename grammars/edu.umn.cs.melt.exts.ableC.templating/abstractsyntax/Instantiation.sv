@@ -81,7 +81,7 @@ top::Expr ::= n::Name a::Exprs
     then
       [err(
          top.location,
-         s"Template parameter inference failed for ${n.name}(${implode(", ", map(showType, a.typereps))})")]
+         s"Template argument inference failed for ${n.name}(${implode(", ", map(showType, a.typereps))})")]
     else [];
   
   local mangledName::String = templateMangledName(n.name, inferredTypeArguments.fromJust);
@@ -169,7 +169,7 @@ top::Decl ::= n::Name ts::[Type]
             n.location,
             s"Wrong number of template parameters for ${n.name}, " ++
             s"expected ${toString(length(templateItem.templateParams))} but got ${toString(length(ts))}")]
-    else if !null(fwrd.errors)
+    else if !containsErrorType(ts) && !null(fwrd.errors)
     then
       [nested(
          n.location,
@@ -227,7 +227,7 @@ top::Decl ::= q::Qualifiers n::Name ts::[Type]
             n.location,
             s"Wrong number of template parameters for ${n.name}, " ++
             s"expected ${toString(length(templateItem.templateParams))} but got ${toString(length(ts))}")]
-    else if !null(fwrd.errors)
+    else if !containsErrorType(ts) && !null(fwrd.errors)
     then
       [nested(
          n.location,
