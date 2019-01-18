@@ -88,13 +88,13 @@ top::Expr ::= n::Name a::Exprs
   
   local fwrd::Expr =
     injectGlobalDeclsExpr(
-      foldDecl(
-        -- Optimization to avoid re-doing instantiations, mitigating exponential performance blowup
-        -- from re-decorating a.
-        if !null(lookupValue(mangledName, addEnv(globalDeclsDefs(a.globalDecls), a.env)))
-        then map(decDecl, a.globalDecls)
-        else [templateExprInstDecl(n, inferredTypeArguments.fromJust)]),
-      directCallExpr(name(mangledName, location=top.location), a, location=top.location),
+      foldDecl([templateExprInstDecl(n, inferredTypeArguments.fromJust)]),
+      directCallExpr(
+        name(mangledName, location=top.location),
+        -- TODO: Avoid re-decorating any element of a that doesn't lift global decls also defined
+        -- in this instantiation.
+        a,
+        location=top.location),
       location=top.location);
   
   forwards to mkErrorCheck(localErrors, fwrd);
