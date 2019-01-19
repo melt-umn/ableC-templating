@@ -143,7 +143,11 @@ top::BaseTypeExpr ::= q::Qualifiers  sub::ExtType
 aspect production typedefTypeExpr
 top::BaseTypeExpr ::= q::Qualifiers  name::Name
 {
-  top.inferredTypes = [pair(name.name, top.argumentType)];
+  top.inferredTypes =
+    case top.argumentType of
+    | errorType() -> [] -- We might find an actual type later on
+    | t -> [pair(name.name, t)]
+    end;
 }
 
 aspect production attributedTypeExpr
