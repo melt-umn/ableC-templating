@@ -55,16 +55,7 @@ top::Expr ::= n::Name a::Exprs
           position = 0;
           argumentTypes = a.typereps;
         }.inferredTypes;
-      foldr(
-        bindMaybeSwapped, returnMaybe([]),
-        map(
-          \ n::String ->
-            \ rest::[Type] ->
-              do (bindMaybe, returnMaybe) {
-                t :: Type <- lookupBy(stringEq, n, inferredTypes);
-                return t :: rest;
-              },
-          templateItem.templateParams));
+      lookupAll(inferredTypes, templateItem.templateParams);
     };
   
   local directErrors::[Message] =
@@ -288,6 +279,22 @@ Boolean ::= ts::[Type]
     foldr(
       \ a::Boolean b::Boolean -> a || b, false,
       map(\ t::Type -> case t of errorType() -> true | _ -> false end, ts));
+}
+
+function lookupAll
+Maybe<[a]> ::= env::[Pair<String a>] ns::[String]
+{
+  return
+    foldr(
+      bindMaybeSwapped, returnMaybe([]),
+      map(
+        \ n::String ->
+          \ rest::[a] ->
+            do (bindMaybe, returnMaybe) {
+              x :: a <- lookupBy(stringEq, n, env);
+              return x :: rest;
+            },
+        ns));
 }
 
 -- Bind paramters are backwards, ugh.
