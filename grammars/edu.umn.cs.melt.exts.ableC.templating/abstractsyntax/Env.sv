@@ -2,27 +2,61 @@ grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 synthesized attribute templateParams::[String];
 synthesized attribute decl::(Decl ::= Name);
-synthesized attribute isItemForwardDecl::Boolean;
 synthesized attribute isItemError::Boolean;
 
-closed nonterminal TemplateItem with templateParams, decl, sourceLocation, isItemValue, isItemType, isItemForwardDecl, isItemError;
+closed nonterminal TemplateItem with templateParams, decl, maybeParameters, sourceLocation, isItemValue, isItemType, isItemError;
 
 aspect default production
 top::TemplateItem ::=
 {
-  top.isItemForwardDecl = false;
+  top.maybeParameters = nothing();
+  top.isItemType = false;
+  top.isItemValue = false;
   top.isItemError = false;
 }
 
-abstract production templateItem
-top::TemplateItem ::= isItemTypedef::Boolean isItemForwardDecl::Boolean sourceLocation::Location params::[String] decl::(Decl ::= Name)
+abstract production typeTemplateItem
+top::TemplateItem ::= sourceLocation::Location params::[String] decl::(Decl ::= Name)
 {
   top.templateParams = params;
   top.decl = decl;
   top.sourceLocation = sourceLocation;
-  top.isItemValue = !isItemTypedef;
-  top.isItemType = isItemTypedef;
-  top.isItemForwardDecl = isItemForwardDecl;
+  top.isItemType = true;
+}
+
+abstract production valueTemplateItem
+top::TemplateItem ::= sourceLocation::Location params::[String] decl::(Decl ::= Name)
+{
+  top.templateParams = params;
+  top.decl = decl;
+  top.sourceLocation = sourceLocation;
+  top.isItemValue = true;
+}
+
+abstract production templateTypeTemplateItem
+top::TemplateItem ::= sourceLocation::Location params::[String] ty::TypeName
+{
+  top.templateParams = params;
+  top.decl =
+    \ mangledName::Name ->
+      typedefDecls(
+        nilAttribute(),
+        ty.bty,
+        consDeclarator(
+          declarator(mangledName, ty.mty, nilAttribute(), nothingInitializer()),
+          nilDeclarator()));
+  top.sourceLocation = sourceLocation;
+  top.isItemType = true;
+}
+
+abstract production functionTemplateItem
+top::TemplateItem ::= sourceLocation::Location params::[String] decl::Decorated FunctionDecl
+{
+  top.templateParams = params;
+  top.decl = instFunctionDeclaration(_, new(decl));
+  top.maybeParameters = decl.maybeParameters;
+  top.sourceLocation = sourceLocation;
+  top.isItemValue = true;
 }
 
 abstract production errorTemplateItem
@@ -107,14 +141,11 @@ top::Name ::= n::String
     | [] -> [err(top.location, "Undeclared templated name " ++ n)]
     | _ :: _ -> []
     end;
-    
+  
   top.templateRedeclarationCheck =
     case templates of
     | [] -> []
     | v :: _ ->
-      if v.isItemForwardDecl
-      then []
-      else
         [err(top.location, 
           "Redeclaration of " ++ n ++ ". Original (from line " ++
           toString(v.sourceLocation.line) ++ ")")]

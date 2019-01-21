@@ -18,8 +18,8 @@ int main() {
   loc<float> c = {1.2f, 3.4f};
   loc<float> d = {5.6f, 7.8f};
 
-  int ab = distance<int>(a, b);
-  float cd = distance<float>(c, d);
+  int ab = distance(a, b);
+  float cd = distance(c, d);
 
   printf("%d\n", ab);
   printf("%f\n", cd);

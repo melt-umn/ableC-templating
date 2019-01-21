@@ -23,11 +23,11 @@ treemap<k, v> put(treemap<k, v> map, k key, v value) {
     return res;
   }
   else if (key < map->key) {
-    map->left = put<k, v>(map->left, key, value);
+    map->left = put(map->left, key, value);
     return map;
   }
   else if (key > map->key) {
-    map->right = put<k, v>(map->right, key, value);
+    map->right = put(map->right, key, value);
     return map;
   }
   else {
@@ -44,10 +44,10 @@ v get(treemap<k, v> map, k key) {
     exit(1);
   }
   else if (key < map->key) {
-    return get<k, v>(map->left, key);
+    return get(map->left, key);
   }
   else if (key > map->key) {
-    return get<k, v>(map->right, key);
+    return get(map->right, key);
   }
   else {
     return map->value;
@@ -60,10 +60,10 @@ bool contains(treemap<k, v> map, k key) {
     return false;
   }
   else if (key < map->key) {
-    return contains<k, v>(map->left, key);
+    return contains(map->left, key);
   }
   else if (key > map->key) {
-    return contains<k, v>(map->right, key);
+    return contains(map->right, key);
   }
   else {
     return true;
@@ -72,20 +72,20 @@ bool contains(treemap<k, v> map, k key) {
 
 int main() {
   treemap<int, const char*> m = NULL;
-  m = put<int, const char*>(m, 2, " ");
-  m = put<int, const char*>(m, 0, "Hello");
-  m = put<int, const char*>(m, 3, "World");
-  m = put<int, const char*>(m, 1, ",");
-  m = put<int, const char*>(m, 5, "\n");
-  m = put<int, const char*>(m, 4, "!");
+  m = put(m, 2, " ");
+  m = put(m, 0, "Hello");
+  m = put(m, 3, "World");
+  m = put(m, 1, ",");
+  m = put(m, 5, "\n");
+  m = put(m, 4, "!");
 
   for (unsigned i = 0; i < 6; i++) {
-    printf("%s", get<int, const char*>(m, i));
+    printf("%s", get(m, i));
   }
 
-  if (!contains<int, const char*>(m, 3))
+  if (!contains(m, 3))
     return 2;
-  else if (contains<int, const char*>(m, 17))
+  else if (contains(m, 17))
     return 3;
   else
     return 0;

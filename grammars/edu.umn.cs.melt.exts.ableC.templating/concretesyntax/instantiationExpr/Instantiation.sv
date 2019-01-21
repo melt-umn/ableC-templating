@@ -24,6 +24,10 @@ concrete productions top::PrimaryExpr_c
   { top.ast = templateDirectCallExpr(name(id.lexeme, location=id.location), params.ast, foldExpr(a.ast), location=top.location); }
 | id::TemplateIdentifier_t '<' params::TypeNames_c '>' '(' ')'
   { top.ast = templateDirectCallExpr(name(id.lexeme, location=id.location), params.ast, nilExpr(), location=top.location); }
+| id::TemplateIdentifier_t '(' a::ArgumentExprList_c ')'
+  { top.ast = templateInferredDirectCallExpr(name(id.lexeme, location=id.location), foldExpr(a.ast), location=top.location); }
+| id::TemplateIdentifier_t '(' ')'
+  { top.ast = templateInferredDirectCallExpr(name(id.lexeme, location=id.location), nilExpr(), location=top.location); }
   -- For use in silver-ableC
 | 'inst' id::Identifier_c '<' params::TypeNames_c '>'
   { top.ast = templateDirectRefExpr(id.ast, params.ast, location=top.location); }
