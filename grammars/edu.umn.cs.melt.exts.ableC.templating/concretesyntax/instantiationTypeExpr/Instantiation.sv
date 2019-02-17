@@ -10,7 +10,7 @@ imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instKeyword;
 
-marking terminal TemplateTypeName_t /[A-Za-z_\$][A-Za-z_0-9\$]*/ lexer classes {Cidentifier};
+marking terminal TemplateTypeName_t /[A-Za-z_\$][A-Za-z_0-9\$]*/ lexer classes {Cidentifier, Ctype};
 
 concrete productions top::TypeSpecifier_c
 | ty::TemplateTypeName_t '<' params::TypeNames_c '>'
