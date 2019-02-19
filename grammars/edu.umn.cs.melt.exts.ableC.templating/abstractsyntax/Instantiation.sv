@@ -55,7 +55,10 @@ top::Expr ::= n::Name a::Exprs
           position = 0;
           argumentTypes = a.typereps;
         }.inferredTypes;
-      lookupAll(inferredTypes, templateItem.templateParams);
+      ts::[Type] <- lookupAll(inferredTypes, templateItem.templateParams);
+      -- TODO: Better treatment of type qualifiers here, maybe?
+      -- Take union of all positive qualifiers and intersection of all negative qualifiers
+      return map((.withoutTypeQualifiers), ts);
     };
   
   local directErrors::[Message] =
