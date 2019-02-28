@@ -12,7 +12,7 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:substitution;
 global builtin::Location = builtinLoc("templating");
 
 abstract production templateTypeDecl
-top::Decl ::= params::Names n::Name ty::TypeName
+top::Decl ::= params::TemplateParameters n::Name ty::TypeName
 {
   propagate substituted;
   top.pp = pp"using ${n.pp}<${ppImplode(text(", "), params.pps)}> = ${ty.pp};";
@@ -20,10 +20,10 @@ top::Decl ::= params::Names n::Name ty::TypeName
   local localErrors::[Message] =
     if !top.isTopLevel
     then [err(n.location, "Template declarations must be global")]
-    else n.templateRedeclarationCheck ++ params.typeParameterErrors;
+    else n.templateRedeclarationCheck ++ params.errors;
   
   local fwrd::Decl =
-    defsDecl([templateDef(n.name, templateTypeTemplateItem(n.location, params.names, ty))]);
+    defsDecl([templateDef(n.name, templateTypeTemplateItem(n.location, params.names, params.kinds, ty))]);
   
   forwards to
     if !null(localErrors)
@@ -32,7 +32,7 @@ top::Decl ::= params::Names n::Name ty::TypeName
 }
 
 abstract production templateStructDecl
-top::Decl ::= params::Names attrs::Attributes n::Name dcls::StructItemList
+top::Decl ::= params::TemplateParameters attrs::Attributes n::Name dcls::StructItemList
 {
   propagate substituted;
   top.pp = ppConcat([
@@ -43,14 +43,14 @@ top::Decl ::= params::Names attrs::Attributes n::Name dcls::StructItemList
   local localErrors::[Message] =
     if !top.isTopLevel
     then [err(n.location, "Template declarations must be global")]
-    else n.templateRedeclarationCheck ++ params.typeParameterErrors;
+    else n.templateRedeclarationCheck ++ params.errors;
   
   local fwrd::Decl =
     defsDecl([
       templateDef(
         n.name,
         typeTemplateItem(
-          n.location, params.names,
+          n.location, params.names, params.kinds,
           \ mangledName::Name ->
             decls(
               foldDecl([
@@ -116,7 +116,7 @@ top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
 }
 
 abstract production templateFunctionDecl
-top::Decl ::= params::Names d::FunctionDecl
+top::Decl ::= params::TemplateParameters d::FunctionDecl
 {
   propagate substituted;
   top.pp = ppConcat([pp"template<", ppImplode(text(", "), params.pps), pp">", line(), d.pp]);
@@ -126,12 +126,12 @@ top::Decl ::= params::Names d::FunctionDecl
       functionDecl(_, _, _, _, n, _, _, _) -> 
         if !top.isTopLevel
         then [err(n.location, "Template declarations must be global")]
-        else n.templateRedeclarationCheck ++ params.typeParameterErrors
+        else n.templateRedeclarationCheck ++ params.errors
       | badFunctionDecl(msg) -> msg
       end;
   
   local fwrd::Decl =
-    defsDecl([templateDef(d.name, functionTemplateItem(d.sourceLocation, params.names, d))]);
+    defsDecl([templateDef(d.name, functionTemplateItem(d.sourceLocation, params.names, params.kinds, d))]);
   
   forwards to
     if !null(localErrors)
@@ -206,19 +206,55 @@ Parameters ::= p::Decorated Parameters
     end;
 }
 
-synthesized attribute typeParameterErrors::[Message] occurs on Names;
+synthesized attribute kinds::[Maybe<TypeName>];
 
-aspect production consName
-top::Names ::= h::Name t::Names
+nonterminal TemplateParameters with pps, names, kinds, count, errors, substituted<TemplateParameters>, substitutions;
+
+abstract production consTemplateParameter
+top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
 {
-  top.typeParameterErrors =
-    (if containsBy(stringEq, h.name, t.names)
-     then [err(h.location, "Duplicate template parameter " ++ h.name)]
-     else []) ++ t.typeParameterErrors;
+  propagate substituted;
+  top.pps = h.pp :: t.pps;
+  top.names = h.name :: t.names;
+  top.kinds = h.kind :: t.kinds;
+  top.count = t.count + 1;
+  top.errors := t.errors;
+  
+  top.errors <-
+    if containsBy(stringEq, h.name, t.names)
+    then [err(h.location, "Duplicate template parameter " ++ h.name)]
+    else [];
 }
 
-aspect production nilName
-top::Names ::=
+abstract production nilTemplateParameter
+top::TemplateParameters ::= 
 {
-  top.typeParameterErrors = [];
+  propagate substituted;
+  top.pps = [];
+  top.names = [];
+  top.kinds = [];
+  top.count = 0;
+  top.errors := [];
+}
+
+synthesized attribute kind::Maybe<TypeName>;
+
+nonterminal TemplateParameter with pp, location, name, kind, substituted<TemplateParameter>, substitutions;
+
+abstract production typeTemplateParameter
+top::TemplateParameter ::= n::Name
+{
+  propagate substituted;
+  top.pp = n.pp;
+  top.name = n.name;
+  top.kind = nothing();
+}
+
+abstract production valueTemplateParameter
+top::TemplateParameter ::= bty::BaseTypeExpr n::Name mty::TypeModifierExpr
+{
+  propagate substituted;
+  top.pp = pp"${bty.pp} ${mty.lpp}${n.pp}${mty.rpp}";
+  top.name = n.name;
+  top.kind = just(typeName(bty, mty));
 }

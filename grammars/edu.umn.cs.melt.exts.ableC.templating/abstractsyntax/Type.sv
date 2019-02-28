@@ -2,10 +2,10 @@ grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 -- Type of an instantiated template typedef
 abstract production templatedType
-top::Type ::= q::Qualifiers n::String args::[Type] resolved::Type
+top::Type ::= q::Qualifiers n::String args::TemplateArgs resolved::Type
 {
   -- Non-interfering overrides to preserve pp for better errors, as much as possible.
-  top.lpp = pp"${terminate(space(), q.pps)}${text(n)}<${ppImplode(pp", ", map(\t::Type -> cat(t.lpp, t.rpp), args))}>";
+  top.lpp = pp"${terminate(space(), q.pps)}${text(n)}<${ppImplode(pp", ", args.pps)}>";
   top.rpp = notext();
   
   -- This is considered non-interfering since
@@ -15,17 +15,11 @@ top::Type ::= q::Qualifiers n::String args::[Type] resolved::Type
     case resolved of
     -- Don't reproduce previous instantiation errors
     | errorType() -> errorTypeExpr([])
-    | _ ->
-      templateTypedefTypeExpr(
-        q,
-        name(n, location=builtin),
-        foldr(
-          consTypeName, nilTypeName(),
-          map(\ t::Type -> typeName(t.baseTypeExpr, t.typeModifierExpr), args)))
+    | _ -> templateTypedefTypeExpr(q, name(n, location=builtin), args.argNames)
     end;
   top.typeModifierExpr = baseTypeExpr();
   top.canonicalType =
-    templatedType(q, n, map(\ t::Type -> t.canonicalType, args), resolved.canonicalType);
+    templatedType(q, n, args.canonicalArgs, resolved.canonicalType);
   top.withoutTypeQualifiers =
     templatedType(nilQualifier(), n, args, resolved.withoutTypeQualifiers);
   top.withoutExtensionQualifiers =
@@ -44,16 +38,90 @@ top::Type ::= q::Qualifiers n::String args::[Type] resolved::Type
   forwards to resolved;
 }
 
-function mkTemplatedType
-Type ::= q::Qualifiers n::String args::[Type] env::Decorated Env
+synthesized attribute argNames::TemplateArgNames;
+synthesized attribute canonicalArgs::TemplateArgs;
+synthesized attribute containsErrorType::Boolean;
+
+nonterminal TemplateArgs with pps, mangledName, count, argNames, paramNames, canonicalArgs, containsErrorType, substDefs;
+
+abstract production consTemplateArg
+top::TemplateArgs ::= h::TemplateArg t::TemplateArgs
 {
-  local result::BaseTypeExpr =
-    templateTypedefTypeExpr(
-      q,
-      name(n, location=builtin),
-      foldr(
-        consTypeName, nilTypeName(),
-        map(\ t::Type -> typeName(t.baseTypeExpr, t.typeModifierExpr), args)));
+  propagate canonicalArgs;
+  top.pps = h.pp :: t.pps;
+  top.mangledName = h.mangledName ++ "_" ++ t.mangledName;
+  top.count = 1 + t.count;
+  top.argNames = consTemplateArgName(h.argName, t.argNames);
+  top.containsErrorType = h.containsErrorType || t.containsErrorType;
+  top.substDefs = h.substDefs ++ t.substDefs;
+  
+  h.paramName =
+    case top.paramNames of
+    | h :: _ -> h
+    | [] -> error("empty paramNames")
+    end;
+  t.paramNames =
+    case top.paramNames of
+    | _ :: t -> t
+    | [] -> []
+    end;
+}
+
+abstract production nilTemplateArg
+top::TemplateArgs ::=
+{
+  propagate canonicalArgs;
+  top.pps = [];
+  top.mangledName = "";
+  top.count = 0;
+  top.argNames = nilTemplateArgName();
+  top.containsErrorType = false;
+  top.substDefs = [];
+}
+
+synthesized attribute argName::TemplateArgName;
+synthesized attribute canonicalArg::TemplateArg;
+
+nonterminal TemplateArg with pp, mangledName, argName, paramName, canonicalArg, containsErrorType, substDefs;
+
+abstract production typeTemplateArg
+top::TemplateArg ::= t::Type
+{
+  top.pp = pp"typename ${t.lpp}${t.rpp}";
+  top.mangledName = t.mangledName;
+  top.argName = typeTemplateArgName(typeName(directTypeExpr(t), baseTypeExpr()), location=builtin);
+  top.canonicalArg = typeTemplateArg(t.canonicalType);
+  top.containsErrorType = case t of errorType() -> true | _ -> false end;
+  top.substDefs = [typedefSubstitution(top.paramName, directTypeExpr(t))];
+}
+
+abstract production nameTemplateArg
+top::TemplateArg ::= n::String
+{
+  propagate canonicalArg;
+  top.pp = text(n);
+  top.mangledName = n;
+  top.argName = nameTemplateArgName(name(n, location=builtin), location=builtin);
+  top.containsErrorType = false;
+  top.substDefs =
+    [declRefSubstitution(top.paramName, declRefExpr(name(n, location=builtin), location=builtin))];
+}
+
+abstract production errorTemplateArg
+top::TemplateArg ::=
+{
+  propagate canonicalArg;
+  top.pp = pp"/*err*/";
+  top.mangledName = "error";
+  top.argName = errorTemplateArgName([], location=builtin);
+  top.containsErrorType = true;
+  top.substDefs = [];
+}
+
+function mkTemplatedType
+Type ::= q::Qualifiers n::String args::TemplateArgs env::Decorated Env
+{
+  local result::BaseTypeExpr = templateTypedefTypeExpr(q, name(n, location=builtin), args.argNames);
   result.env = env;
   result.returnType = nothing();
   result.givenRefId = nothing();
