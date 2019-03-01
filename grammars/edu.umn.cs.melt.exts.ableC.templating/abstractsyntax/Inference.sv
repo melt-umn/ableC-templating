@@ -78,6 +78,12 @@ top::BaseTypeExpr ::= msg::[Message]  ty::BaseTypeExpr
   ty.argumentType = top.argumentType;
 }
 
+aspect production completedTypeExpr
+top::BaseTypeExpr ::= t::Type
+{
+  top.inferredTypes = [];
+}
+
 aspect production decTypeExpr
 top::BaseTypeExpr ::= ty::Decorated BaseTypeExpr
 {
