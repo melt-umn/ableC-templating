@@ -1,16 +1,16 @@
 
-template<a>
+template<typename a>
 struct foo {
   a x;
 };
 
-using bar1<a> = foo<a>*;
-using bar2<a> = bar1<a>*;
-using bar3<a> = bar2<a>*;
-using bar4<a> = bar3<a>*;
-using bar5<a> = bar4<a>*;
+using bar1<typename a> = foo<a>*;
+using bar2<typename a> = bar1<a>*;
+using bar3<typename a> = bar2<a>*;
+using bar4<typename a> = bar3<a>*;
+using bar5<typename a> = bar4<a>*;
 
-template<a>
+template<typename a>
 a baz(bar5<a> x) {
   
 }

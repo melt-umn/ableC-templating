@@ -101,7 +101,10 @@ top::TemplateArg ::= n::String
   propagate canonicalArg;
   top.pp = text(n);
   top.mangledName = n;
-  top.argName = nameTemplateArgName(name(n, location=builtin), location=builtin);
+  top.argName =
+    valueTemplateArgName(
+      declRefExpr(name(n, location=builtin), location=builtin),
+      location=builtin);
   top.containsErrorType = false;
   top.substDefs =
     [declRefSubstitution(top.paramName, declRefExpr(name(n, location=builtin), location=builtin))];

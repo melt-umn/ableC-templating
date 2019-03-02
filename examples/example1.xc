@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-template<a>
+template<typename a>
 a max(a x, a y) {
   if (x > y)
     return x;

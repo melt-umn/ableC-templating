@@ -11,7 +11,7 @@ imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeEx
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
-exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typeParameters;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructKeyword;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:maybeAttributes;
 
@@ -29,7 +29,7 @@ nonterminal TemplateInitialStructDeclaration_c with ast<(ast:Decl ::= ast:Struct
 
 concrete production templateInitialStructDeclaration_c
 top::TemplateInitialStructDeclaration_c ::=
-   '<' params::TypeParameters_c '>' TemplateStruct_t
+   '<' params::TemplateParameters_c '>' TemplateStruct_t
    maa::MaybeAttributes_c id::Identifier_c
 {
   top.ast = templateStructDecl(params.ast, maa.ast, id.ast, _);

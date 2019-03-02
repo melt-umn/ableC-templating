@@ -11,10 +11,10 @@ imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationExpr;
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
-exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typeParameters;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 
 concrete production templateFunctionForwardDecl_c
-top::Declaration_c ::= 'template' '<' params::TypeParameters_c '>' ds::DeclarationSpecifiers_c  idcl::InitDeclaratorList_c  ';'
+top::Declaration_c ::= 'template' '<' params::TemplateParameters_c '>' ds::DeclarationSpecifiers_c  idcl::InitDeclaratorList_c  ';'
 {
   ds.givenQualifiers = ds.typeQualifiers;
   

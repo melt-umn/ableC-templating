@@ -10,12 +10,12 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeExpr;
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typeParameters;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 
 marking terminal Using_t 'using' lexer classes {Ckeyword};
 
 concrete production usingDeclaration_c
-top::Declaration_c ::= 'using' id::Identifier_c '<' params::TypeParameters_c '>' '=' ty::TypeName_c ';'
+top::Declaration_c ::= 'using' id::Identifier_c '<' params::TemplateParameters_c '>' '=' ty::TypeName_c ';'
 {
   top.ast = templateTypeDecl(params.ast, id.ast, ty.ast);
 }

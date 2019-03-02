@@ -1,11 +1,11 @@
 
 int main() {
-  template<a> struct foo { a x; };
+  template<typename a> struct foo { a x; };
   
-  template<a> int bar(a x) {
+  template<typename a> int bar(a x) {
     foo<a> y;
     y.x = x;
   }
   
-  using baz<a> = foo<a>*;
+  using baz<typename a> = foo<a>*;
 }

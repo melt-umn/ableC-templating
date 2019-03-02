@@ -245,7 +245,7 @@ abstract production typeTemplateParameter
 top::TemplateParameter ::= n::Name
 {
   propagate substituted;
-  top.pp = n.pp;
+  top.pp = pp"typename ${n.pp}";
   top.name = n.name;
   top.kind = nothing();
 }

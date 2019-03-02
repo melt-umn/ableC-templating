@@ -1,28 +1,28 @@
 #include <stdio.h>
 
-template<a>
+template<typename a>
 struct data {
   a val;
 };
 
-template<a>
+template<typename a>
 data<a> makeData(a val) {
   data<a> result;
   result.val = val;
   return result;
 }
 
-template<a>
+template<typename a>
 data<a> bar(data<a> x);
 
-template<a>
+template<typename a>
 data<a> foo(data<a> x) {
   if (x.val <= 0)
     return makeData<a>(0);
   return makeData(x.val + bar(makeData(x.val - 1)).val);
 }
 
-template<a>
+template<typename a>
 data<a> bar(data<a> x) {
   if (x.val <= 0)
     return makeData<a>(0);

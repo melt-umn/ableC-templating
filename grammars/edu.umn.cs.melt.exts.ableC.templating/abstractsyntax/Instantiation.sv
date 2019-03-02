@@ -171,7 +171,7 @@ top::Decl ::= n::Name tas::TemplateArgs
     else if !templateItem.isItemError && tas.count != length(templateItem.templateParams)
     then [err(
             n.location,
-            s"Wrong number of template parameters for ${n.name}, " ++
+            s"Wrong number of template arguments for ${n.name}, " ++
             s"expected ${toString(length(templateItem.templateParams))} but got ${toString(tas.count)}")]
     else if !tas.containsErrorType && !null(fwrd.errors)
     then
@@ -225,7 +225,7 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
     else if !templateItem.isItemError && tas.count != length(templateItem.templateParams)
     then [err(
             n.location,
-            s"Wrong number of template parameters for ${n.name}, " ++
+            s"Wrong number of template arguments for ${n.name}, " ++
             s"expected ${toString(length(templateItem.templateParams))} but got ${toString(tas.count)}")]
     else if !tas.containsErrorType && !null(fwrd.errors)
     then
@@ -356,7 +356,7 @@ abstract production typeTemplateArgName
 top::TemplateArgName ::= ty::TypeName
 {
   propagate substituted;
-  top.pp = pp"typename ${ty.pp}";
+  top.pp = ty.pp;
   top.argrep = typeTemplateArg(ty.typerep);
   top.errors := ty.errors;
   top.errors <-
@@ -379,13 +379,24 @@ top::TemplateArgName ::= ty::TypeName
     end;
 }
 
-abstract production nameTemplateArgName
-top::TemplateArgName ::= n::Name
+abstract production valueTemplateArgName
+top::TemplateArgName ::= e::Expr
 {
   propagate substituted;
-  top.pp = n.pp;
-  top.argrep = nameTemplateArg(n.name);
-  top.errors := n.valueLookupCheck;
+  top.pp = e.pp;
+  top.argrep =
+    case e of
+    | declRefExpr(n) -> nameTemplateArg(n.name)
+    | _ -> errorTemplateArg()
+    end;
+  top.errors := e.errors;
+  top.errors <-
+    case e of
+    | declRefExpr(n) -> []
+    | _ -> [err(e.location, s"Invalid template argument expression: ${show(80, e.pp)}")]
+    end;
+  
+  e.returnType = nothing();
   
   local ty::TypeName = substTypeName(top.substEnv, top.paramKind.fromJust);
   ty.env = top.env;
@@ -394,14 +405,18 @@ top::TemplateArgName ::= n::Name
     case top.paramKind of
     | just(_) ->
       ty.errors ++
-      if typeAssignableTo(ty.typerep, n.valueItem.typerep)
+      if typeAssignableTo(ty.typerep, e.typerep)
       then []
-      else [err(top.location, s"Template value parameter expected ${showType(ty.typerep)} but got ${showType(n.valueItem.typerep)}")]
+      else [err(top.location, s"Template value parameter expected ${showType(ty.typerep)} but got ${showType(e.typerep)}")]
     | nothing() -> [err(top.location, "Template type parameter given value argument")]
     end;
-  top.decls = ty.decls;
-  top.defs := ty.defs;
-  top.inferredArgs = [pair(n.name, top.argument)];
+  top.decls = if null(top.errors) then ty.decls else [];
+  top.defs := if null(top.errors) then ty.defs else [];
+  top.inferredArgs =
+    case e of
+    | declRefExpr(n) -> [pair(n.name, top.argument)]
+    | _ -> []
+    end;
 }
 
 abstract production errorTemplateArgName

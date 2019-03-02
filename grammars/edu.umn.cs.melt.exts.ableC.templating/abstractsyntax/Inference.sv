@@ -81,7 +81,7 @@ top::BaseTypeExpr ::= msg::[Message]  ty::BaseTypeExpr
 aspect production completedTypeExpr
 top::BaseTypeExpr ::= t::Type
 {
-  top.inferredTypes = [];
+  top.inferredArgs = [];
 }
 
 aspect production decTypeExpr
