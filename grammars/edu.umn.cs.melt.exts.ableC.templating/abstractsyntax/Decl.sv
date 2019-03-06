@@ -208,7 +208,10 @@ Parameters ::= p::Decorated Parameters
 
 synthesized attribute kinds::[Maybe<TypeName>];
 
-nonterminal TemplateParameters with pps, names, kinds, count, errors, substituted<TemplateParameters>, substitutions;
+autocopy attribute appendedTemplateParameters :: TemplateParameters;
+synthesized attribute appendedTemplateParametersRes :: TemplateParameters;
+
+nonterminal TemplateParameters with pps, names, kinds, count, errors, appendedTemplateParameters, appendedTemplateParametersRes, substituted<TemplateParameters>, substitutions;
 
 abstract production consTemplateParameter
 top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
@@ -219,6 +222,7 @@ top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
   top.kinds = h.kind :: t.kinds;
   top.count = t.count + 1;
   top.errors := t.errors;
+  top.appendedTemplateParametersRes = consTemplateParameter(h, t.appendedTemplateParametersRes);
   
   top.errors <-
     if containsBy(stringEq, h.name, t.names)
@@ -235,6 +239,14 @@ top::TemplateParameters ::=
   top.kinds = [];
   top.count = 0;
   top.errors := [];
+  top.appendedTemplateParametersRes = top.appendedTemplateParameters;
+}
+
+function appendTemplateParameters
+TemplateParameters ::= p1::TemplateParameters p2::TemplateParameters
+{
+  p1.appendedTemplateParameters = p2;
+  return p1.appendedTemplateParametersRes;
 }
 
 synthesized attribute kind::Maybe<TypeName>;

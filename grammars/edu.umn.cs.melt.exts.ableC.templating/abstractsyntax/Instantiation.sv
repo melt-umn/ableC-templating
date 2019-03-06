@@ -278,7 +278,10 @@ synthesized attribute argreps::TemplateArgs;
 
 inherited attribute arguments::TemplateArgs;
 
-nonterminal TemplateArgNames with pps, env, substEnv, paramNames, paramKinds, argreps, count, errors, decls, defs, substDefs, arguments, inferredArgs, substituted<TemplateArgNames>, substitutions;
+autocopy attribute appendedTemplateArgNames :: TemplateArgNames;
+synthesized attribute appendedTemplateArgNamesRes :: TemplateArgNames;
+
+nonterminal TemplateArgNames with pps, env, substEnv, paramNames, paramKinds, argreps, count, errors, decls, defs, substDefs, arguments, inferredArgs, appendedTemplateArgNames, appendedTemplateArgNamesRes, substituted<TemplateArgNames>, substitutions;
 
 abstract production consTemplateArgName
 top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
@@ -292,6 +295,7 @@ top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
   top.defs := h.defs ++ t.defs;
   top.substDefs = ta.substDefs ++ t.substDefs;
   top.inferredArgs = h.inferredArgs ++ t.inferredArgs;
+  top.appendedTemplateArgNamesRes = consTemplateArgName(h, t.appendedTemplateArgNamesRes);
   
   local ta::TemplateArg = h.argrep;
   ta.paramName = h.paramName;
@@ -342,6 +346,14 @@ top::TemplateArgNames ::=
   top.defs := [];
   top.substDefs = [];
   top.inferredArgs = [];
+  top.appendedTemplateArgNamesRes = top.appendedTemplateArgNames;
+}
+
+function appendTemplateArgNames
+TemplateArgNames ::= p1::TemplateArgNames p2::TemplateArgNames
+{
+  p1.appendedTemplateArgNames = p2;
+  return p1.appendedTemplateArgNamesRes;
 }
 
 inherited attribute paramName::String;
