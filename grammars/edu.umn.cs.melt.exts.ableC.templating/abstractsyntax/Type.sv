@@ -79,6 +79,9 @@ top::TemplateArgs ::=
   top.substDefs = [];
 }
 
+global foldTemplateArg::(TemplateArgs ::= [TemplateArg]) =
+  foldr(consTemplateArg, nilTemplateArg(), _);
+
 synthesized attribute argName::TemplateArgName;
 synthesized attribute canonicalArg::TemplateArg;
 
@@ -122,9 +125,10 @@ top::TemplateArg ::=
 }
 
 function mkTemplatedType
-Type ::= q::Qualifiers n::String args::TemplateArgs env::Decorated Env
+Type ::= q::Qualifiers n::String args::[TemplateArg] env::Decorated Env
 {
-  local result::BaseTypeExpr = templateTypedefTypeExpr(q, name(n, location=builtin), args.argNames);
+  local result::BaseTypeExpr =
+    templateTypedefTypeExpr(q, name(n, location=builtin), foldTemplateArg(args).argNames);
   result.env = env;
   result.returnType = nothing();
   result.givenRefId = nothing();

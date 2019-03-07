@@ -57,7 +57,7 @@ top::Expr ::= n::Name a::Exprs
   top.pp = pp"${n.pp}(${ppImplode(pp", ", a.pps)})";
   
   local templateItem::Decorated TemplateItem = n.templateItem;
-  local inferredTypeArguments::Maybe<TemplateArgs> =
+  local inferredTemplateArguments::Maybe<TemplateArgs> =
     do (bindMaybe, returnMaybe) {
       params::Parameters <- templateItem.maybeParameters;
       inferredArgs::[Pair<String TemplateArg>] =
@@ -81,18 +81,18 @@ top::Expr ::= n::Name a::Exprs
   local localErrors::[Message] =
     if !null(directErrors)
     then directErrors
-    else if !inferredTypeArguments.isJust || inferredTypeArguments.fromJust.containsErrorType
+    else if !inferredTemplateArguments.isJust || inferredTemplateArguments.fromJust.containsErrorType
     then
       [err(
          top.location,
          s"Template argument inference failed for ${n.name}(${implode(", ", map(showType, a.typereps))})")]
     else [];
   
-  local mangledName::String = templateMangledName(n.name, inferredTypeArguments.fromJust);
+  local mangledName::String = templateMangledName(n.name, inferredTemplateArguments.fromJust);
   
   local fwrd::Expr =
     injectGlobalDeclsExpr(
-      foldDecl([templateExprInstDecl(n, inferredTypeArguments.fromJust)]),
+      foldDecl([templateExprInstDecl(n, inferredTemplateArguments.fromJust)]),
       directCallExpr(
         name(mangledName, location=top.location),
         -- TODO: Avoid re-decorating any element of a that doesn't lift global decls also defined
@@ -282,6 +282,7 @@ autocopy attribute appendedTemplateArgNames :: TemplateArgNames;
 synthesized attribute appendedTemplateArgNamesRes :: TemplateArgNames;
 
 nonterminal TemplateArgNames with pps, env, substEnv, paramNames, paramKinds, argreps, count, errors, decls, defs, substDefs, arguments, inferredArgs, appendedTemplateArgNames, appendedTemplateArgNamesRes, substituted<TemplateArgNames>, substitutions;
+flowtype TemplateArgNames = decorate {env, substEnv, paramNames, paramKinds}, pps {}, count {}, argreps {decorate}, errors {decorate}, defs {decorate}, substDefs {decorate}, inferredArgs {decorate, arguments}, appendedTemplateArgNamesRes {appendedTemplateArgNames}, substituted {substitutions};
 
 abstract production consTemplateArgName
 top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
@@ -363,6 +364,7 @@ synthesized attribute argrep::TemplateArg;
 inherited attribute argument::TemplateArg;
 
 nonterminal TemplateArgName with pp, env, substEnv, paramName, paramKind, argrep, errors, decls, defs, argument, inferredArgs, substituted<TemplateArgName>, substitutions, location;
+flowtype TemplateArgName = decorate {env, substEnv, paramName, paramKind}, pp {}, argrep {decorate}, errors {decorate}, defs {decorate}, inferredArgs {decorate, argument}, substituted {substitutions};
 
 abstract production typeTemplateArgName
 top::TemplateArgName ::= ty::TypeName

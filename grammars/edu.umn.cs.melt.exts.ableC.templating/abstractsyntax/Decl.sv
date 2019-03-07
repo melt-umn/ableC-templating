@@ -212,6 +212,7 @@ autocopy attribute appendedTemplateParameters :: TemplateParameters;
 synthesized attribute appendedTemplateParametersRes :: TemplateParameters;
 
 nonterminal TemplateParameters with pps, names, kinds, count, errors, appendedTemplateParameters, appendedTemplateParametersRes, substituted<TemplateParameters>, substitutions;
+flowtype TemplateParameters = decorate {}, pps {}, names {}, kinds {decorate}, errors {decorate}, appendedTemplateParametersRes {appendedTemplateParameters}, substituted {substitutions};
 
 abstract production consTemplateParameter
 top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
@@ -252,6 +253,7 @@ TemplateParameters ::= p1::TemplateParameters p2::TemplateParameters
 synthesized attribute kind::Maybe<TypeName>;
 
 nonterminal TemplateParameter with pp, location, name, kind, substituted<TemplateParameter>, substitutions;
+flowtype TemplateParameter = decorate {}, pp {}, name {}, kind {decorate}, substituted {substitutions};
 
 abstract production typeTemplateParameter
 top::TemplateParameter ::= n::Name
