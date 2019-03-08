@@ -26,3 +26,5 @@ concrete productions top::TemplateArgument_c
   { top.ast = typeTemplateArgName(ty.ast, location=top.location); }
 | id::Identifier_c
   { top.ast = valueTemplateArgName(ast:declRefExpr(id.ast, location=id.location), location=top.location); }
+| c::Constant_c
+  { top.ast = valueTemplateArgName(c.ast, location=top.location); }

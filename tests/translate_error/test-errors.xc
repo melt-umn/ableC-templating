@@ -37,6 +37,8 @@ struct bar {
 
 int asdf, qwerty;
 
+struct baz {int x;} b;
+
 int main() {
   ptr<ptr<int>> x = new<ptr<int>>(new<int>(42));
   printf("%d\n", deref<int>(deref<ptr<int>>(x)));
@@ -51,4 +53,6 @@ int main() {
 
   bar<qwerty> q;
   bar<asdf> p = q;
+
+  bar<b>;
 }

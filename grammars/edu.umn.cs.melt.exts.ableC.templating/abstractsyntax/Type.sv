@@ -113,6 +113,36 @@ top::TemplateArg ::= n::String
     [declRefSubstitution(top.paramName, declRefExpr(name(n, location=builtin), location=builtin))];
 }
 
+abstract production realConstTemplateArg
+top::TemplateArg ::= c::Decorated NumericConstant
+{
+  propagate canonicalArg;
+  top.pp = c.pp;
+  top.mangledName = c.mangledName;
+  top.argName =
+    valueTemplateArgName(
+      realConstant(new(c), location=builtin),
+      location=builtin);
+  top.containsErrorType = false;
+  top.substDefs =
+    [declRefSubstitution(top.paramName, realConstant(new(c), location=builtin))];
+}
+
+abstract production characterConstTemplateArg
+top::TemplateArg ::= c::String p::CharPrefix
+{
+  propagate canonicalArg;
+  top.pp = text(c);
+  top.mangledName = substring(indexOf("'", c) + 1, lastIndexOf("'", c), c);
+  top.argName =
+    valueTemplateArgName(
+      characterConstant(c, p, location=builtin),
+      location=builtin);
+  top.containsErrorType = false;
+  top.substDefs =
+    [declRefSubstitution(top.paramName, characterConstant(c, p, location=builtin))];
+}
+
 abstract production errorTemplateArg
 top::TemplateArg ::=
 {

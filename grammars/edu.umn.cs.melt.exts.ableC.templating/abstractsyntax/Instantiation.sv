@@ -401,12 +401,16 @@ top::TemplateArgName ::= e::Expr
   top.argrep =
     case e of
     | declRefExpr(n) -> nameTemplateArg(n.name)
+    | realConstant(c) -> realConstTemplateArg(c)
+    | characterConstant(c, p) -> characterConstTemplateArg(c, p)
     | _ -> errorTemplateArg()
     end;
   top.errors := e.errors;
   top.errors <-
     case e of
     | declRefExpr(n) -> []
+    | realConstant(c) -> []
+    | characterConstant(c, p) -> []
     | _ -> [err(e.location, s"Invalid template argument expression: ${show(80, e.pp)}")]
     end;
   
