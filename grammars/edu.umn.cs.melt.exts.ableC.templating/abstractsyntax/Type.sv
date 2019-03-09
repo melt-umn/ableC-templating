@@ -110,7 +110,7 @@ top::TemplateArg ::= n::String
       location=builtin);
   top.containsErrorType = false;
   top.substDefs =
-    [declRefSubstitution(top.paramName, declRefExpr(name(n, location=builtin), location=builtin))];
+    [declRefLocSubstitution(top.paramName, declRefExpr(name(n, location=builtin), location=_))];
 }
 
 abstract production realConstTemplateArg
@@ -125,7 +125,7 @@ top::TemplateArg ::= c::Decorated NumericConstant
       location=builtin);
   top.containsErrorType = false;
   top.substDefs =
-    [declRefSubstitution(top.paramName, realConstant(new(c), location=builtin))];
+    [declRefLocSubstitution(top.paramName, realConstant(new(c), location=_))];
 }
 
 abstract production characterConstTemplateArg
@@ -140,7 +140,7 @@ top::TemplateArg ::= c::String p::CharPrefix
       location=builtin);
   top.containsErrorType = false;
   top.substDefs =
-    [declRefSubstitution(top.paramName, characterConstant(c, p, location=builtin))];
+    [declRefLocSubstitution(top.paramName, characterConstant(c, p, location=_))];
 }
 
 abstract production errorTemplateArg
