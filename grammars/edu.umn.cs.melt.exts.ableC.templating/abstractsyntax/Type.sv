@@ -47,11 +47,11 @@ nonterminal TemplateArgs with pps, mangledName, count, argNames, paramNames, can
 abstract production consTemplateArg
 top::TemplateArgs ::= h::TemplateArg t::TemplateArgs
 {
-  propagate canonicalArgs;
   top.pps = h.pp :: t.pps;
   top.mangledName = h.mangledName ++ "_" ++ t.mangledName;
   top.count = 1 + t.count;
   top.argNames = consTemplateArgName(h.argName, t.argNames);
+  top.canonicalArgs = consTemplateArg(h.canonicalArg, t.canonicalArgs);
   top.containsErrorType = h.containsErrorType || t.containsErrorType;
   top.substDefs = h.substDefs ++ t.substDefs;
   
@@ -90,7 +90,7 @@ nonterminal TemplateArg with pp, mangledName, argName, paramName, canonicalArg, 
 abstract production typeTemplateArg
 top::TemplateArg ::= t::Type
 {
-  top.pp = pp"typename ${t.lpp}${t.rpp}";
+  top.pp = cat(t.lpp, t.rpp);
   top.mangledName = t.mangledName;
   top.argName = typeTemplateArgName(typeName(directTypeExpr(t), baseTypeExpr()), location=builtin);
   top.canonicalArg = typeTemplateArg(t.canonicalType);
