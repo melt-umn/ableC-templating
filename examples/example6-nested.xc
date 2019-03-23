@@ -1,24 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-template<a>
+template<typename a>
 struct ptr {
   a *contents;
 };
 
-template<a>
+template<typename a>
 ptr<a> new(a x) {
   ptr<a> res = {malloc(sizeof(a))};
   *res.contents = x;
   return res;
 }
 
-template<a>
+template<typename a>
 a deref(ptr<a> x) {
   return *(x.contents);
 }
 
-template<a>
+template<typename a>
 void delete(ptr<a> x) {
   free(x.contents);
 }

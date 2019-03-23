@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <math.h>
 
-template<a>
+template<typename a>
 struct loc {
   a x;
   a y;
 };
 
-template<a>
+template<typename a>
 a distance(loc<a> p, loc<a> q) {
   return (a)sqrt((p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y));
 }

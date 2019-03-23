@@ -1,15 +1,15 @@
 #include <stdio.h>
 #include <math.h>
 
-template<a>
+template<typename a>
 struct loc {
   a x;
   a y;
 };
 
-using locptr<a> = loc<a>*;
+using locptr<typename a> = loc<a>*;
 
-template<a>
+template<typename a>
 a distance(locptr<a> p, locptr<a> q) {
   return (a)sqrt((p->x - q->x) * (p->x - q->x) + (p->y - q->y) * (p->y - q->y));
 }

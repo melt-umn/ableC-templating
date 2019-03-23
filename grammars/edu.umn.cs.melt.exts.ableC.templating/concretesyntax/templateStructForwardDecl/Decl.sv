@@ -11,7 +11,6 @@ imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeEx
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 --exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateKeyword;
-exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typeParameters;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructKeyword;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructDecl;
 

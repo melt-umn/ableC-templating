@@ -1,5 +1,5 @@
 
-template<a> struct bar { a f; };
+template<typename a> struct bar { a f; };
 
 struct foo { bar<struct baz> *a; };
 

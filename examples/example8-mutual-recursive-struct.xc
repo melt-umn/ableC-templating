@@ -1,12 +1,12 @@
-template<a> struct bar;
+template<typename a> struct bar;
 
-template<a>
+template<typename a>
 struct foo {
   a x;
   bar<a> *b;
 };
 
-template<a>
+template<typename a>
 struct bar {
   a x;
   foo<a> b;
