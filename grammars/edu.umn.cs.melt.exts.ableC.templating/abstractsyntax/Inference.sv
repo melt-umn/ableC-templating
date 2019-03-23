@@ -5,6 +5,11 @@ inherited attribute argumentTypes::[Type] occurs on TypeNames, Parameters;
 inherited attribute argumentType::Type occurs on ParameterDecl, TypeName, BaseTypeExpr, TypeModifierExpr;
 synthesized attribute argumentBaseType::Type occurs on TypeModifierExpr;
 
+-- Forward deps only needed here due to MWDA, since this these are extension attributes.
+flowtype inferredArgs {decorate, argumentTypes} on TypeNames, Parameters;
+flowtype inferredArgs {decorate, argumentType} on ParameterDecl, TypeName, BaseTypeExpr, TypeModifierExpr;
+flowtype argumentBaseType {decorate, argumentType} on TypeModifierExpr;
+
 aspect production consParameters
 top::Parameters ::= h::ParameterDecl  t::Parameters
 {
