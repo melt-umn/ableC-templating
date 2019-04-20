@@ -287,16 +287,16 @@ top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
   top.errors := h.errors ++ t.errors;
   top.decls = h.decls ++ t.decls;
   top.defs := h.defs ++ t.defs;
-  top.substDefs = ta.substDefs ++ t.substDefs;
+  top.substDefs =
+    (if !null(top.paramNames) then ta.substDefs else []) ++ t.substDefs;
   top.inferredArgs = h.inferredArgs ++ t.inferredArgs;
   top.appendedTemplateArgNamesRes = consTemplateArgName(h, t.appendedTemplateArgNamesRes);
   
   local ta::TemplateArg = h.argrep;
-  ta.paramName = h.paramName;
   
   t.env = addEnv(h.defs, h.env);
   t.substEnv = ta.substDefs ++ h.substEnv;
-  h.paramName =
+  ta.paramName =
     case top.paramNames of
     | h :: _ -> h
     | [] -> error("empty paramNames")
@@ -355,8 +355,8 @@ synthesized attribute argrep::TemplateArg;
 
 inherited attribute argument::TemplateArg;
 
-nonterminal TemplateArgName with pp, env, substEnv, paramName, paramKind, argrep, errors, decls, defs, argument, inferredArgs, location;
-flowtype TemplateArgName = decorate {env, substEnv, paramName, paramKind}, pp {}, argrep {decorate}, errors {decorate}, defs {decorate}, inferredArgs {decorate, argument};
+nonterminal TemplateArgName with pp, env, substEnv, paramKind, argrep, errors, decls, defs, argument, inferredArgs, location;
+flowtype TemplateArgName = decorate {env, substEnv, paramKind}, pp {}, argrep {decorate}, errors {decorate}, defs {decorate}, inferredArgs {decorate, argument};
 
 abstract production typeTemplateArgName
 top::TemplateArgName ::= ty::TypeName

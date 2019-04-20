@@ -53,7 +53,8 @@ top::TemplateArgs ::= h::TemplateArg t::TemplateArgs
   top.argNames = consTemplateArgName(h.argName, t.argNames);
   top.canonicalArgs = consTemplateArg(h.canonicalArg, t.canonicalArgs);
   top.containsErrorType = h.containsErrorType || t.containsErrorType;
-  top.substDefs = h.substDefs ++ t.substDefs;
+  top.substDefs =
+    (if !null(top.paramNames) then h.substDefs else []) ++ t.substDefs;
   
   h.paramName =
     case top.paramNames of
