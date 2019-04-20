@@ -5,16 +5,15 @@ imports silver:langutil:pp;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax:host;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction;
+imports edu:umn:cs:melt:ableC:abstractsyntax:substitution;
 imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 imports edu:umn:cs:melt:ableC:abstractsyntax:overloadable;
-imports edu:umn:cs:melt:ableC:abstractsyntax:substitution;
 
 global builtin::Location = builtinLoc("templating");
 
 abstract production templateTypeDecl
 top::Decl ::= params::TemplateParameters n::Name ty::TypeName
 {
-  propagate substituted;
   top.pp = pp"using ${n.pp}<${ppImplode(text(", "), params.pps)}> = ${ty.pp};";
   
   local localErrors::[Message] =
@@ -34,7 +33,6 @@ top::Decl ::= params::TemplateParameters n::Name ty::TypeName
 abstract production templateStructDecl
 top::Decl ::= params::TemplateParameters attrs::Attributes n::Name dcls::StructItemList
 {
-  propagate substituted;
   top.pp = ppConcat([
     pp"template<", ppImplode(text(", "), params.pps), pp">", line(),
     pp"struct ", ppAttributes(attrs), text(n.name), space(),
@@ -82,7 +80,6 @@ top::Decl ::= params::TemplateParameters attrs::Attributes n::Name dcls::StructI
 abstract production deferredStructDecl
 top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
 {
-  propagate substituted;
   top.pp = ppConcat([
     pp"deferred struct ", ppAttributes(attrs), text(n.name), space(),
     braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
@@ -118,7 +115,6 @@ top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
 abstract production templateFunctionDecl
 top::Decl ::= params::TemplateParameters d::FunctionDecl
 {
-  propagate substituted;
   top.pp = ppConcat([pp"template<", ppImplode(text(", "), params.pps), pp">", line(), d.pp]);
   
   local localErrors::[Message] =
@@ -142,7 +138,6 @@ top::Decl ::= params::TemplateParameters d::FunctionDecl
 abstract production instFunctionDeclaration
 top::Decl ::= mangledName::Name decl::FunctionDecl
 {
-  propagate substituted;
   top.pp = pp"inst_decl ${decl.pp}";
   
   decl.givenMangledName = mangledName;
@@ -211,13 +206,12 @@ synthesized attribute kinds::[Maybe<TypeName>];
 autocopy attribute appendedTemplateParameters :: TemplateParameters;
 synthesized attribute appendedTemplateParametersRes :: TemplateParameters;
 
-nonterminal TemplateParameters with pps, names, kinds, count, errors, appendedTemplateParameters, appendedTemplateParametersRes, substituted<TemplateParameters>, substitutions;
-flowtype TemplateParameters = decorate {}, pps {}, names {}, kinds {decorate}, errors {decorate}, appendedTemplateParametersRes {appendedTemplateParameters}, substituted {substitutions};
+nonterminal TemplateParameters with pps, names, kinds, count, errors, appendedTemplateParameters, appendedTemplateParametersRes;
+flowtype TemplateParameters = decorate {}, pps {}, names {}, kinds {decorate}, errors {decorate}, appendedTemplateParametersRes {appendedTemplateParameters};
 
 abstract production consTemplateParameter
 top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
 {
-  propagate substituted;
   top.pps = h.pp :: t.pps;
   top.names = h.name :: t.names;
   top.kinds = h.kind :: t.kinds;
@@ -234,7 +228,6 @@ top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
 abstract production nilTemplateParameter
 top::TemplateParameters ::= 
 {
-  propagate substituted;
   top.pps = [];
   top.names = [];
   top.kinds = [];
@@ -252,13 +245,12 @@ TemplateParameters ::= p1::TemplateParameters p2::TemplateParameters
 
 synthesized attribute kind::Maybe<TypeName>;
 
-nonterminal TemplateParameter with pp, location, name, kind, substituted<TemplateParameter>, substitutions;
-flowtype TemplateParameter = decorate {}, pp {}, name {}, kind {decorate}, substituted {substitutions};
+nonterminal TemplateParameter with pp, location, name, kind;
+flowtype TemplateParameter = decorate {}, pp {}, name {}, kind {decorate};
 
 abstract production typeTemplateParameter
 top::TemplateParameter ::= n::Name
 {
-  propagate substituted;
   top.pp = pp"typename ${n.pp}";
   top.name = n.name;
   top.kind = nothing();
@@ -267,7 +259,6 @@ top::TemplateParameter ::= n::Name
 abstract production valueTemplateParameter
 top::TemplateParameter ::= bty::BaseTypeExpr n::Name mty::TypeModifierExpr
 {
-  propagate substituted;
   top.pp = pp"${bty.pp} ${mty.lpp}${n.pp}${mty.rpp}";
   top.name = n.name;
   top.kind = just(typeName(bty, mty));
