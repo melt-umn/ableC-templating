@@ -5,7 +5,6 @@ import core:monad;
 abstract production templateDirectRefExpr
 top::Expr ::= n::Name tas::TemplateArgNames
 {
-  propagate substituted;
   top.pp = pp"${n.pp}<${ppImplode(pp", ", tas.pps)}>";
   
   local templateItem::Decorated TemplateItem = n.templateItem;
@@ -29,7 +28,6 @@ top::Expr ::= n::Name tas::TemplateArgNames
 abstract production templateDirectCallExpr
 top::Expr ::= n::Name tas::TemplateArgNames a::Exprs
 {
-  propagate substituted;
   top.pp = pp"${n.pp}<${ppImplode(pp", ", tas.pps)}>(${ppImplode(pp", ", a.pps)})";
   
   local templateItem::Decorated TemplateItem = n.templateItem;
@@ -53,7 +51,6 @@ top::Expr ::= n::Name tas::TemplateArgNames a::Exprs
 abstract production templateInferredDirectCallExpr
 top::Expr ::= n::Name a::Exprs
 {
-  propagate substituted;
   top.pp = pp"${n.pp}(${ppImplode(pp", ", a.pps)})";
   
   local templateItem::Decorated TemplateItem = n.templateItem;
@@ -107,7 +104,6 @@ top::Expr ::= n::Name a::Exprs
 abstract production templateTypedefTypeExpr
 top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
 {
-  propagate substituted;
   top.pp = pp"${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", tas.pps)}>";
   
   -- templatedType forwards to resolved (forward.typerep here), so no interference.
@@ -159,7 +155,6 @@ abstract production templateExprInstDecl
 top::Decl ::= n::Name tas::TemplateArgs
 {
   top.pp = pp"inst ${n.pp}<${ppImplode(pp", ", tas.pps)}>;";
-  top.substituted = top; -- Don't substitute n
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   
@@ -213,7 +208,6 @@ abstract production templateTypeExprInstDecl
 top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
 {
   top.pp = pp"inst ${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", tas.pps)}>;";
-  top.substituted = top; -- Don't substitute n
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   
@@ -281,29 +275,28 @@ inherited attribute arguments::TemplateArgs;
 autocopy attribute appendedTemplateArgNames :: TemplateArgNames;
 synthesized attribute appendedTemplateArgNamesRes :: TemplateArgNames;
 
-nonterminal TemplateArgNames with pps, env, substEnv, paramNames, paramKinds, argreps, count, errors, decls, defs, substDefs, arguments, inferredArgs, appendedTemplateArgNames, appendedTemplateArgNamesRes, substituted<TemplateArgNames>, substitutions;
-flowtype TemplateArgNames = decorate {env, substEnv, paramNames, paramKinds}, pps {}, count {}, argreps {decorate}, errors {decorate}, defs {decorate}, substDefs {decorate}, inferredArgs {decorate, arguments}, appendedTemplateArgNamesRes {appendedTemplateArgNames}, substituted {substitutions};
+nonterminal TemplateArgNames with pps, env, substEnv, paramNames, paramKinds, argreps, count, errors, decls, defs, substDefs, arguments, inferredArgs, appendedTemplateArgNames, appendedTemplateArgNamesRes;
+flowtype TemplateArgNames = decorate {env, substEnv, paramNames, paramKinds}, pps {}, count {}, argreps {decorate}, errors {decorate}, defs {decorate}, substDefs {decorate}, inferredArgs {decorate, arguments}, appendedTemplateArgNamesRes {appendedTemplateArgNames};
 
 abstract production consTemplateArgName
 top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
 {
-  propagate substituted;
   top.pps = h.pp :: t.pps;
   top.argreps = consTemplateArg(h.argrep, t.argreps);
   top.count = 1 + t.count;
   top.errors := h.errors ++ t.errors;
   top.decls = h.decls ++ t.decls;
   top.defs := h.defs ++ t.defs;
-  top.substDefs = ta.substDefs ++ t.substDefs;
+  top.substDefs =
+    (if !null(top.paramNames) then ta.substDefs else []) ++ t.substDefs;
   top.inferredArgs = h.inferredArgs ++ t.inferredArgs;
   top.appendedTemplateArgNamesRes = consTemplateArgName(h, t.appendedTemplateArgNamesRes);
   
   local ta::TemplateArg = h.argrep;
-  ta.paramName = h.paramName;
   
   t.env = addEnv(h.defs, h.env);
   t.substEnv = ta.substDefs ++ h.substEnv;
-  h.paramName =
+  ta.paramName =
     case top.paramNames of
     | h :: _ -> h
     | [] -> error("empty paramNames")
@@ -338,7 +331,6 @@ top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
 abstract production nilTemplateArgName
 top::TemplateArgNames ::=
 {
-  propagate substituted;
   top.pps = [];
   top.argreps = nilTemplateArg();
   top.count = 0;
@@ -363,13 +355,12 @@ synthesized attribute argrep::TemplateArg;
 
 inherited attribute argument::TemplateArg;
 
-nonterminal TemplateArgName with pp, env, substEnv, paramName, paramKind, argrep, errors, decls, defs, argument, inferredArgs, substituted<TemplateArgName>, substitutions, location;
-flowtype TemplateArgName = decorate {env, substEnv, paramName, paramKind}, pp {}, argrep {decorate}, errors {decorate}, defs {decorate}, inferredArgs {decorate, argument}, substituted {substitutions};
+nonterminal TemplateArgName with pp, env, substEnv, paramKind, argrep, errors, decls, defs, argument, inferredArgs, location;
+flowtype TemplateArgName = decorate {env, substEnv, paramKind}, pp {}, argrep {decorate}, errors {decorate}, defs {decorate}, inferredArgs {decorate, argument};
 
 abstract production typeTemplateArgName
 top::TemplateArgName ::= ty::TypeName
 {
-  propagate substituted;
   top.pp = ty.pp;
   top.argrep = typeTemplateArg(ty.typerep);
   top.errors := ty.errors;
@@ -396,7 +387,6 @@ top::TemplateArgName ::= ty::TypeName
 abstract production valueTemplateArgName
 top::TemplateArgName ::= e::Expr
 {
-  propagate substituted;
   top.pp = e.pp;
   top.argrep =
     case e of
@@ -440,7 +430,6 @@ top::TemplateArgName ::= e::Expr
 abstract production errorTemplateArgName
 top::TemplateArgName ::= msg::[Message]
 {
-  propagate substituted;
   top.pp = pp"/*err*/";
   top.argrep = errorTemplateArg();
   top.errors := msg;

@@ -53,7 +53,8 @@ top::TemplateArgs ::= h::TemplateArg t::TemplateArgs
   top.argNames = consTemplateArgName(h.argName, t.argNames);
   top.canonicalArgs = consTemplateArg(h.canonicalArg, t.canonicalArgs);
   top.containsErrorType = h.containsErrorType || t.containsErrorType;
-  top.substDefs = h.substDefs ++ t.substDefs;
+  top.substDefs =
+    (if !null(top.paramNames) then h.substDefs else []) ++ t.substDefs;
   
   h.paramName =
     case top.paramNames of
@@ -95,7 +96,7 @@ top::TemplateArg ::= t::Type
   top.argName = typeTemplateArgName(typeName(directTypeExpr(t), baseTypeExpr()), location=builtin);
   top.canonicalArg = typeTemplateArg(t.canonicalType);
   top.containsErrorType = case t of errorType() -> true | _ -> false end;
-  top.substDefs = [typedefSubstitution(top.paramName, directTypeExpr(t))];
+  top.substDefs = [typeExprSubstitution(top.paramName, directTypeExpr(t))];
 }
 
 abstract production nameTemplateArg
@@ -110,7 +111,7 @@ top::TemplateArg ::= n::String
       location=builtin);
   top.containsErrorType = false;
   top.substDefs =
-    [declRefLocSubstitution(top.paramName, declRefExpr(name(n, location=builtin), location=_))];
+    [exprSubstitution(top.paramName, declRefExpr(name(n, location=builtin), location=_))];
 }
 
 abstract production realConstTemplateArg
@@ -125,7 +126,7 @@ top::TemplateArg ::= c::Decorated NumericConstant
       location=builtin);
   top.containsErrorType = false;
   top.substDefs =
-    [declRefLocSubstitution(top.paramName, realConstant(new(c), location=_))];
+    [exprSubstitution(top.paramName, realConstant(new(c), location=_))];
 }
 
 abstract production characterConstTemplateArg
@@ -140,7 +141,7 @@ top::TemplateArg ::= c::String p::CharPrefix
       location=builtin);
   top.containsErrorType = false;
   top.substDefs =
-    [declRefLocSubstitution(top.paramName, characterConstant(c, p, location=_))];
+    [exprSubstitution(top.paramName, characterConstant(c, p, location=_))];
 }
 
 abstract production errorTemplateArg
