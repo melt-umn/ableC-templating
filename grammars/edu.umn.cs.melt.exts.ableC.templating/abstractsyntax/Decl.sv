@@ -119,12 +119,12 @@ top::Decl ::= params::TemplateParameters d::FunctionDecl
   
   local localErrors::[Message] =
     case d of
-      functionDecl(_, _, _, _, n, _, _, _) -> 
+    | functionDecl(_, _, _, _, n, _, _, _) -> 
         if !top.isTopLevel
         then [err(n.location, "Template declarations must be global")]
         else n.templateRedeclarationCheck ++ params.errors
-      | badFunctionDecl(msg) -> msg
-      end;
+    | badFunctionDecl(msg) -> msg
+    end;
   
   local fwrd::Decl =
     defsDecl([templateDef(d.name, functionTemplateItem(d.sourceLocation, params.names, params.kinds, d))]);
