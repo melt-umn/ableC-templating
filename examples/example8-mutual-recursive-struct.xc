@@ -1,20 +1,19 @@
+template<typename a> struct bar;
 
-//template<a> struct bar;
-
-template<a>
+template<typename a>
 struct foo {
   a x;
-  inst bar<a> *b;
+  bar<a> *b;
 };
 
-template<a>
+template<typename a>
 struct bar {
   a x;
-  inst foo<a> b;
+  foo<a> b;
 };
 
 int main(int argc, char **argv) {
-  inst bar<float> p;
-  inst foo<float> q = p.b;
+  bar<float> p;
+  foo<float> q = p.b;
 }
 

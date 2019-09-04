@@ -5,36 +5,24 @@ imports silver:langutil:pp;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax:host;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction;
+imports edu:umn:cs:melt:ableC:abstractsyntax:substitution;
 imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 imports edu:umn:cs:melt:ableC:abstractsyntax:overloadable;
-imports edu:umn:cs:melt:ableC:abstractsyntax:substitution;
 
 global builtin::Location = builtinLoc("templating");
 
 abstract production templateTypeDecl
-top::Decl ::= params::Names n::Name ty::TypeName
+top::Decl ::= params::TemplateParameters n::Name ty::TypeName
 {
-  propagate substituted;
   top.pp = pp"using ${n.pp}<${ppImplode(text(", "), params.pps)}> = ${ty.pp};";
   
   local localErrors::[Message] =
     if !top.isTopLevel
     then [err(n.location, "Template declarations must be global")]
-    else n.templateRedeclarationCheck ++ params.typeParameterErrors;
+    else n.templateRedeclarationCheck ++ params.errors;
   
   local fwrd::Decl =
-    defsDecl([
-      templateDef(
-        n.name,
-        templateItem(
-          true, false, n.location, params.names,
-          \ mangledName::Name ->
-            typedefDecls(
-              nilAttribute(),
-              ty.bty,
-              consDeclarator(
-                declarator(mangledName, ty.mty, nilAttribute(), nothingInitializer()),
-                nilDeclarator()))))]);
+    defsDecl([templateDef(n.name, templateTypeTemplateItem(n.location, params.names, params.kinds, ty))]);
   
   forwards to
     if !null(localErrors)
@@ -43,9 +31,8 @@ top::Decl ::= params::Names n::Name ty::TypeName
 }
 
 abstract production templateStructDecl
-top::Decl ::= params::Names attrs::Attributes n::Name dcls::StructItemList
+top::Decl ::= params::TemplateParameters attrs::Attributes n::Name dcls::StructItemList
 {
-  propagate substituted;
   top.pp = ppConcat([
     pp"template<", ppImplode(text(", "), params.pps), pp">", line(),
     pp"struct ", ppAttributes(attrs), text(n.name), space(),
@@ -54,41 +41,35 @@ top::Decl ::= params::Names attrs::Attributes n::Name dcls::StructItemList
   local localErrors::[Message] =
     if !top.isTopLevel
     then [err(n.location, "Template declarations must be global")]
-    else n.templateRedeclarationCheck ++ params.typeParameterErrors;
+    else n.templateRedeclarationCheck ++ params.errors;
   
   local fwrd::Decl =
     defsDecl([
       templateDef(
         n.name,
-        templateItem(
-          true, false, n.location, params.names,
+        typeTemplateItem(
+          n.location, params.names, params.kinds,
           \ mangledName::Name ->
             decls(
               foldDecl([
                 -- maybeDecl {typedef __attribute__((refId("edu:umn:cs:melt:exts:ableC:templating:__name__"))) struct __name__ __name__;}
-                maybeValueDecl(
-                  mangledName.name,
-                  typedefDecls(
-                    consAttribute(
-                      gccAttribute(
-                        consAttrib(
-                          appliedAttrib(
-                            attribName(name("refId", location=builtin)),
-                            consExpr(
-                              stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${mangledName.name}\"", location=builtin),
-                              nilExpr())),
-                          nilAttrib())),
-                      nilAttribute()),
-                    tagReferenceTypeExpr(nilQualifier(), structSEU(), mangledName),
-                    consDeclarator(
-                      declarator(mangledName, baseTypeExpr(), nilAttribute(), nothingInitializer()),
-                      nilDeclarator()))),
-                -- struct __name__ { ... };
-                typeExprDecl(
-                  nilAttribute(),
-                  structTypeExpr(
-                    nilQualifier(),
-                    structDecl(attrs, justName(mangledName), dcls, location=n.location)))]))))]);
+                typedefDecls(
+                  consAttribute(
+                    gccAttribute(
+                      consAttrib(
+                        appliedAttrib(
+                          attribName(name("refId", location=builtin)),
+                          consExpr(
+                            stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${mangledName.name}\"", location=builtin),
+                            nilExpr())),
+                        nilAttrib())),
+                    nilAttribute()),
+                  tagReferenceTypeExpr(nilQualifier(), structSEU(), mangledName),
+                  consDeclarator(
+                    declarator(mangledName, baseTypeExpr(), nilAttribute(), nothingInitializer()),
+                    nilDeclarator())),
+                -- Defer the struct declaration until all components are complete types
+                deferredStructDecl(attrs, mangledName, dcls)]))))]);
   
   forwards to
     if !null(localErrors)
@@ -96,10 +77,44 @@ top::Decl ::= params::Names attrs::Attributes n::Name dcls::StructItemList
     else fwrd;
 }
 
-abstract production templateFunctionDecl
-top::Decl ::= params::Names d::FunctionDecl
+abstract production deferredStructDecl
+top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
 {
-  propagate substituted;
+  top.pp = ppConcat([
+    pp"deferred struct ", ppAttributes(attrs), text(n.name), space(),
+    braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
+  
+  dcls.inStruct = true;
+  dcls.isLast = true; -- We don't know, but be conservative to avoid errors
+  
+  -- Global environment also containing global defs from dcls
+  local augmentedGlobalEnv::Decorated Env =
+    addEnv(foldr(consDefs, nilDefs(), dcls.defs).globalDefs, globalEnv(top.env));
+  
+  forwards to
+    foldr(
+      deferredDecl,
+      -- Only declare the struct if it doesn't already have a definition
+      maybeDecl(
+        \ env::Decorated Env ->
+          null(lookupRefId(decorate n with {env = env;}.tagRefId, env)),
+        -- struct __name__ { ... };
+        typeExprDecl(
+          nilAttribute(),
+          structTypeExpr(
+            nilQualifier(),
+            structDecl(attrs, justName(n), dcls, location=n.location)))),
+      filter(
+        \ refId::String -> null(lookupRefId(refId, augmentedGlobalEnv)),
+        catMaybes(
+          map(
+            \ c::Pair<String ValueItem> -> c.snd.typerep.maybeRefId,
+            foldr(consDefs, nilDefs(), dcls.localDefs).valueContribs))));
+}
+
+abstract production templateFunctionDecl
+top::Decl ::= params::TemplateParameters d::FunctionDecl
+{
   top.pp = ppConcat([pp"template<", ppImplode(text(", "), params.pps), pp">", line(), d.pp]);
   
   local localErrors::[Message] =
@@ -107,17 +122,12 @@ top::Decl ::= params::Names d::FunctionDecl
       functionDecl(_, _, _, _, n, _, _, _) -> 
         if !top.isTopLevel
         then [err(n.location, "Template declarations must be global")]
-        else n.templateRedeclarationCheck ++ params.typeParameterErrors
+        else n.templateRedeclarationCheck ++ params.errors
       | badFunctionDecl(msg) -> msg
       end;
   
   local fwrd::Decl =
-    defsDecl(
-      [templateDef(
-         d.name,
-         templateItem(
-           false, false, d.sourceLocation, params.names,
-           instFunctionDeclaration(_, d)))]);
+    defsDecl([templateDef(d.name, functionTemplateItem(d.sourceLocation, params.names, params.kinds, d))]);
   
   forwards to
     if !null(localErrors)
@@ -128,7 +138,6 @@ top::Decl ::= params::Names d::FunctionDecl
 abstract production instFunctionDeclaration
 top::Decl ::= mangledName::Name decl::FunctionDecl
 {
-  propagate substituted;
   top.pp = pp"inst_decl ${decl.pp}";
   
   decl.givenMangledName = mangledName;
@@ -137,13 +146,14 @@ top::Decl ::= mangledName::Name decl::FunctionDecl
 
 inherited attribute givenMangledName::Name occurs on FunctionDecl;
 synthesized attribute instFunctionDecl::Decl occurs on FunctionDecl;
+synthesized attribute maybeParameters::Maybe<Parameters> occurs on FunctionDecl;
 
 aspect production functionDecl
-top::FunctionDecl ::= storage::[StorageClass]  fnquals::SpecialSpecifiers  bty::BaseTypeExpr mty::TypeModifierExpr  n::Name  attrs::Attributes  ds::Decls  body::Stmt
+top::FunctionDecl ::= storage::StorageClasses  fnquals::SpecialSpecifiers  bty::BaseTypeExpr mty::TypeModifierExpr  n::Name  attrs::Attributes  ds::Decls  body::Stmt
 {
-  local newStorageClasses::[StorageClass] =
-    if !containsBy(storageClassEq, staticStorageClass(), storage)
-    then staticStorageClass() :: storage
+  local newStorageClasses::StorageClasses =
+    if !storage.isStatic
+    then consStorageClass(staticStorageClass(), storage)
     else storage;
   top.instFunctionDecl =
     decls(
@@ -162,12 +172,20 @@ top::FunctionDecl ::= storage::[StorageClass]  fnquals::SpecialSpecifiers  bty::
             | functionTypeExprWithoutArgs(_, _, _) -> mty
             | _ -> error("mty should always be a functionTypeExpr")
             end, top.givenMangledName, attrs, ds, body))]));
+  
+  top.maybeParameters =
+    case mty of
+    | functionTypeExprWithArgs(_, params, _, _) -> just(params)
+    | functionTypeExprWithoutArgs(_, _, _) -> nothing()
+    | _ -> error("mty should always be a functionTypeExpr")
+    end;
 }
 
 aspect production badFunctionDecl
 top::FunctionDecl ::= msg::[Message]
 {
   top.instFunctionDecl = functionDeclaration(top);
+  top.maybeParameters = nothing();
 }
 
 function directTypeParameters
@@ -183,33 +201,65 @@ Parameters ::= p::Decorated Parameters
     end;
 }
 
-synthesized attribute typeParameterErrors::[Message] occurs on Names;
+synthesized attribute kinds::[Maybe<TypeName>];
 
-aspect production consName
-top::Names ::= h::Name t::Names
+autocopy attribute appendedTemplateParameters :: TemplateParameters;
+synthesized attribute appendedTemplateParametersRes :: TemplateParameters;
+
+nonterminal TemplateParameters with pps, names, kinds, count, errors, appendedTemplateParameters, appendedTemplateParametersRes;
+flowtype TemplateParameters = decorate {}, pps {}, names {}, kinds {decorate}, errors {decorate}, appendedTemplateParametersRes {appendedTemplateParameters};
+
+abstract production consTemplateParameter
+top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
 {
-  top.typeParameterErrors =
-    (if containsBy(stringEq, h.name, t.names)
-     then [err(h.location, "Duplicate template parameter " ++ h.name)]
-     else []) ++ t.typeParameterErrors;
+  top.pps = h.pp :: t.pps;
+  top.names = h.name :: t.names;
+  top.kinds = h.kind :: t.kinds;
+  top.count = t.count + 1;
+  top.errors := t.errors;
+  top.appendedTemplateParametersRes = consTemplateParameter(h, t.appendedTemplateParametersRes);
+  
+  top.errors <-
+    if containsBy(stringEq, h.name, t.names)
+    then [err(h.location, "Duplicate template parameter " ++ h.name)]
+    else [];
 }
 
-aspect production nilName
-top::Names ::=
+abstract production nilTemplateParameter
+top::TemplateParameters ::= 
 {
-  top.typeParameterErrors = [];
+  top.pps = [];
+  top.names = [];
+  top.kinds = [];
+  top.count = 0;
+  top.errors := [];
+  top.appendedTemplateParametersRes = top.appendedTemplateParameters;
 }
 
-function storageClassEq
-Boolean ::= s1::StorageClass s2::StorageClass
+function appendTemplateParameters
+TemplateParameters ::= p1::TemplateParameters p2::TemplateParameters
 {
-  return
-    case s1, s2 of
-      externStorageClass(), externStorageClass() -> true
-    | staticStorageClass(), staticStorageClass() -> true
-    | autoStorageClass(), autoStorageClass() -> true
-    | registerStorageClass(), registerStorageClass() -> true
-    | threadLocalStorageClass(), threadLocalStorageClass() -> true
-    | _, _ -> false
-    end;
+  p1.appendedTemplateParameters = p2;
+  return p1.appendedTemplateParametersRes;
+}
+
+synthesized attribute kind::Maybe<TypeName>;
+
+nonterminal TemplateParameter with pp, location, name, kind;
+flowtype TemplateParameter = decorate {}, pp {}, name {}, kind {decorate};
+
+abstract production typeTemplateParameter
+top::TemplateParameter ::= n::Name
+{
+  top.pp = pp"typename ${n.pp}";
+  top.name = n.name;
+  top.kind = nothing();
+}
+
+abstract production valueTemplateParameter
+top::TemplateParameter ::= bty::BaseTypeExpr n::Name mty::TypeModifierExpr
+{
+  top.pp = pp"${bty.pp} ${mty.lpp}${n.pp}${mty.rpp}";
+  top.name = n.name;
+  top.kind = just(typeName(bty, mty));
 }

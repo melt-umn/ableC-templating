@@ -1,46 +1,58 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-template<a, b>
+template<typename a, typename b>
 struct ptr {
   a *contents;
 };
 
-template<a>
+template<typename a>
 struct ptr {
   a *contents;
 };
 
-template<a, a>
-inst ptr<a> new(a x) {
-  inst ptr<a> res = {malloc(sizeof(a))};
+template<typename a, typename a>
+ptr<a> new(a x) {
+  ptr<a> res = {malloc(sizeof(a))};
   *res.contents = x;
   return res;
 }
 
-template<a>
-a deref(inst ptr<a> x) {
+template<typename a>
+a deref(ptr<a> x) {
   return &(x.contents);
   return &(x.contents);
   return &(x.contents);
 }
 
-template<a>
-void delete(inst ptr<a> x) {
+template<typename a>
+void delete(ptr<a> x) {
   free(x.contents);
 }
 
-int asdf;
+template<int x>
+struct bar {
+  int items[x];
+};
+
+int asdf, qwerty;
+
+struct baz {int x;} b;
 
 int main() {
-  inst ptr<inst ptr<int>> x = inst new<inst ptr<int>>(inst new<int>(42));
-  printf("%d\n", inst deref<int>(inst deref<inst ptr<int>>(x)));
-  inst delete<int>(inst deref<inst ptr<int>>(x));
-  inst delete<inst ptr<int>>(x);
+  ptr<ptr<int>> x = new<ptr<int>>(new<int>(42));
+  printf("%d\n", deref<int>(deref<ptr<int>>(x)));
+  delete<int>(deref<ptr<int>>(x));
+  delete<ptr<int>>(x);
 
   typedef int foo;
-  inst ptr<foo> y;
-  inst delete<foo>(y);
+  ptr<foo> y;
+  delete<foo>(y);
 
-  inst ptr<asdf> z;
+  ptr<asdf> z;
+
+  bar<qwerty> q;
+  bar<asdf> p = q;
+
+  bar<b>;
 }

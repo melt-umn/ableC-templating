@@ -45,8 +45,11 @@ foo.snd = 3.14;
 ```c++
 int x = max<int>(3, 4);
 ```
-Note that C++-style explicit instantiation and type inference is not supported, yet.  But this is
-both easy to implement for extension constructs which translate to template instantiations.  
+If the template type arguments can be inferred from the function arguments types, then they may be
+omitted, as in C++:
+```c++
+int x = max(3, 4);
+```
 
 ## Implementation
 Templated definitions of types or values are placed in a new environment namespace.  When an

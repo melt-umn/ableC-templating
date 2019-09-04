@@ -1,10 +1,10 @@
 
-template<a>
+template<typename a>
 struct foo {
   a x;
-  inst foo<int> *b;
+  foo<int> *b;
 };
 
 int main(int argc, char **argv) {
-  inst foo<float> q;
+  foo<float> q;
 }
