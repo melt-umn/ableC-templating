@@ -9,8 +9,8 @@ terminal EscapeTemplateArgNames_t   '$TemplateArgNames'   lexer classes {Escape,
 
 concrete productions top::TemplateParameter_c
 | '$TemplateParameters' NotInAbleC silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t InAbleC
-  { top.ast = escapeTemplateParameters(e, location=top.location); }
+  { top.ast = antiquoteTemplateParameters(e, location=top.location); }
 
 concrete productions top::TemplateArgument_c
 | '$TemplateArgNames' NotInAbleC silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t InAbleC
-  { top.ast = escapeTemplateArgNames(e, location=top.location); }
+  { top.ast = antiquoteTemplateArgNames(e, location=top.location); }
