@@ -10,32 +10,32 @@ imports edu:umn:cs:melt:exts:silver:ableC:abstractsyntax;
 imports edu:umn:cs:melt:ableC:abstractsyntax:host as ableC;
 
 -- AbleC-to-Silver bridge productions
-abstract production escapeTemplateParameters
+abstract production antiquoteTemplateParameters
 top::TemplateParameter ::= e::Expr
 {
   top.pp = pp"$$ConstructorList{${text(e.unparse)}}";
-  forwards to error("TODO: forward value for escapeConstructorList");
+  forwards to error("TODO: forward value for antiquoteConstructorList");
 }
 
-abstract production escapeTemplateArgNames
+abstract production antiquoteTemplateArgNames
 top::TemplateArgName ::= e::Expr
 {
   top.pp = pp"$$StmtClauses{${text(e.unparse)}}";
-  forwards to error("TODO: forward value for escapeStmtClauses");
+  forwards to error("TODO: forward value for antiquoteStmtClauses");
 }
 
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
-  collectionEscapeProductions <-
+  collectionAntiquoteProductions <-
     [pair(
-       "edu:umn:cs:melt:exts:ableC:templating:silverconstruction:escapeTemplateParameters",
+       "edu:umn:cs:melt:exts:ableC:templating:silverconstruction:antiquoteTemplateParameters",
        pair("TemplateParameters",
          pair(
            "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:consTemplateParameter",
            "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:appendTemplateParameters"))),
      pair(
-       "edu:umn:cs:melt:exts:ableC:templating:silverconstruction:escapeTemplateArgNames",
+       "edu:umn:cs:melt:exts:ableC:templating:silverconstruction:antiquoteTemplateArgNames",
        pair("TemplateArgNames",
          pair(
            "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:consTemplateArgName",
