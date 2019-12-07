@@ -3,18 +3,22 @@ grammar edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 imports silver:langutil;
 
 imports edu:umn:cs:melt:ableC:concretesyntax;
+imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeExpr;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax:host as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-terminal Typename_t 'typename' lexer classes {Cidentifier}, font=font_all;
+terminal TypenameKwd_t 'typename' lexer classes {Keyword};
 
-aspect parser attribute context
-  action {
-    context = addIdentsToScope([ast:name("typename", location=builtin)], Typename_t, context);
-  };
+disambiguate TypeName_t, TypenameKwd_t {
+  pluck TypenameKwd_t;
+}
+
+disambiguate TypeName_t, TemplateTypeName_t, TypenameKwd_t {
+  pluck TypenameKwd_t;
+}
 
 -- Needed to open a scope for the parameters
 terminal OpenScope_t '' action { context = openScope(context); };
