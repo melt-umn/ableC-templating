@@ -3,20 +3,18 @@ grammar edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 imports silver:langutil;
 
 imports edu:umn:cs:melt:ableC:concretesyntax;
-imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeExpr;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax:host as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typenameDisamb
+  with edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeExpr;
+
 terminal TypenameKwd_t 'typename' lexer classes {Keyword};
 
 disambiguate TypeName_t, TypenameKwd_t {
-  pluck TypenameKwd_t;
-}
-
-disambiguate TypeName_t, TemplateTypeName_t, TypenameKwd_t {
   pluck TypenameKwd_t;
 }
 
