@@ -11,7 +11,7 @@ imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instKeyword;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateArguments;
 
-marking terminal TemplateIdentifier_t /[A-Za-z_\$][A-Za-z_0-9\$]*/ lexer classes {Identifier};
+marking terminal TemplateIdentifier_t /[A-Za-z_\$][A-Za-z_0-9\$]*/ lexer classes {Identifier, Scoped};
 terminal TemplateLParen_t '(';
 
 disambiguate TemplateLParen_t, LParen_t {

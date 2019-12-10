@@ -11,7 +11,7 @@ imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instKeyword;
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateArguments;
 
-marking terminal TemplateTypeName_t /[A-Za-z_\$][A-Za-z_0-9\$]*/ lexer classes {Identifier, Type};
+marking terminal TemplateTypeName_t /[A-Za-z_\$][A-Za-z_0-9\$]*/ lexer classes {Type, Identifier, Scoped};
 
 concrete productions top::TypeSpecifier_c
 | ty::TemplateTypeName_t '<' args::TemplateArguments_c '>'
