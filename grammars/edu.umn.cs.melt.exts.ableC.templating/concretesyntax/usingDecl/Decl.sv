@@ -12,7 +12,7 @@ imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateParameters;
 
-marking terminal Using_t 'using' lexer classes {Ckeyword};
+marking terminal Using_t 'using' lexer classes {Keyword, Global};
 
 concrete production usingDeclaration_c
 top::Declaration_c ::= 'using' id::Identifier_c '<' params::TemplateParameters_c '>' '=' ty::TypeName_c ';'

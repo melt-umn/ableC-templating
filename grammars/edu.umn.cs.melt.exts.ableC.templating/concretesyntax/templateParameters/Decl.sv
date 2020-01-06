@@ -9,12 +9,14 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-terminal Typename_t 'typename' lexer classes {Cidentifier}, font=font_all;
+exports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:typenameDisamb
+  with edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeExpr;
 
-aspect parser attribute context
-  action {
-    context = addIdentsToScope([ast:name("typename", location=builtin)], Typename_t, context);
-  };
+terminal TypenameKwd_t 'typename' lexer classes {Keyword};
+
+disambiguate TypeName_t, TypenameKwd_t {
+  pluck TypenameKwd_t;
+}
 
 -- Needed to open a scope for the parameters
 terminal OpenScope_t '' action { context = openScope(context); };

@@ -11,7 +11,7 @@ namespaces.
 
 ### Template struct declaration
 ```c++
-template<a, b>
+template<typename a, typename b>
 struct pair {
   a fst;
   b snd;
@@ -22,7 +22,7 @@ Note here that, as in C++, the struct is 'typedefed' automaticly, to be referenc
 
 ### Template function declaration
 ```c++
-template<a>
+template<typename a>
 a max(a x, a y) {
   return x > y? x : y;
 }
@@ -31,7 +31,7 @@ Note that all templated functions are implicitly static.
 
 ### Template alias
 ```c++
-using triple<a, b, c> = pair<a, pair<b, c>>;
+using triple<typename a, typename b, typename c> = pair<a, pair<b, c>>;
 ```
 This syntax is inspired by C++11.
 
@@ -63,8 +63,6 @@ Note that this means that all instantation arguments must be defined globally; i
 local to a function cannot be used as an argument in an instantiation.
 
 ## Future work
-* C++-style template parameter type inference would be nice.
-* Mutually recursive templated structs, potentially with or without a forward declaration
 * Explicit global instantiations? Would be easy to implement, just need concrete syntax for
 templateExprInstDecl or templateTypeExprInstDecl.
 * Allow linking behavior of templated functions to be explicitly specified, if desired. Currently
