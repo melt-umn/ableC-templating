@@ -9,7 +9,7 @@ top::Expr ::= n::Name tas::TemplateArgNames
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   tas.env = globalEnv(top.env);
-  tas.substEnv = [];
+  tas.substEnv = fail();
   tas.paramNames = templateItem.templateParams;
   tas.paramKinds = templateItem.kinds;
   
@@ -32,7 +32,7 @@ top::Expr ::= n::Name tas::TemplateArgNames a::Exprs
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   tas.env = globalEnv(top.env);
-  tas.substEnv = [];
+  tas.substEnv = fail();
   tas.paramNames = templateItem.templateParams;
   tas.paramKinds = templateItem.kinds;
   
@@ -125,9 +125,9 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
   -- Also try inferring on the transformation, if this is a templated type definition
   local templateItem::Decorated TemplateItem = n.templateItem;
   local forwardTypeName::TypeName =
-    substTypeName(
-      tas.substDefs,
-      case templateItem of templateTypeTemplateItem(_, _, _, ty) -> ty end);
+    rewriteWith(
+      topDownSubs(tas.substDefs),
+      case templateItem of templateTypeTemplateItem(_, _, _, ty) -> new(ty) end).fromJust;
   forwardTypeName.env = globalEnv(top.env);
   forwardTypeName.returnType = nothing();
   forwardTypeName.argumentType = top.argumentType;
@@ -138,7 +138,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
     end;
   
   tas.env = globalEnv(top.env);
-  tas.substEnv = [];
+  tas.substEnv = fail();
   tas.paramNames = templateItem.templateParams;
   tas.paramKinds = templateItem.kinds;
   
@@ -183,7 +183,10 @@ top::Decl ::= n::Name tas::TemplateArgs
   local fwrd::Decl =
     if !null(lookupValue(mangledName, top.env))
     then decls(nilDecl())
-    else substDecl(tas.substDefs, templateItem.decl(name(mangledName, location=builtin)));
+    else
+      rewriteWith(
+        topDownSubs(tas.substDefs),
+        templateItem.decl(name(mangledName, location=builtin))).fromJust;
   fwrd.isTopLevel = true;
   fwrd.env = top.env;
   fwrd.returnType = nothing();
@@ -238,10 +241,16 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
     if !null(lookupValue(mangledName, top.env))
     then decls(nilDecl())
     else
-      substDecl(
-        refIdSubstitution(s"edu:umn:cs:melt:exts:ableC:templating:${n.name}", mangledRefId) ::
-        tas.substDefs,
-        templateItem.decl(name(mangledName, location=builtin)));
+      rewriteWith(
+        topDownSubs(
+          rule on Attrib of
+          | appliedAttrib(attribName(name("refId")), consExpr(stringLiteral(s), nilExpr()))
+            when s == s"\"edu:umn:cs:melt:exts:ableC:templating:${n.name}\"" ->
+              appliedAttrib(
+                attribName(name("refId", location=builtin)),
+                consExpr(stringLiteral(s"\"${mangledRefId}\"", location=builtin), nilExpr()))
+          end <+ tas.substDefs),
+          templateItem.decl(name(mangledName, location=builtin))).fromJust;
   fwrd.isTopLevel = true;
   fwrd.env = top.env;
   fwrd.returnType = nothing();
@@ -263,8 +272,8 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
 }
 
 
-autocopy attribute substEnv::[Substitution];
-synthesized attribute substDefs::[Substitution];
+autocopy attribute substEnv::Strategy;
+synthesized attribute substDefs::Strategy;
 
 inherited attribute paramNames::[String];
 inherited attribute paramKinds::[Maybe<TypeName>];
@@ -288,14 +297,14 @@ top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
   top.decls = h.decls ++ t.decls;
   top.defs := h.defs ++ t.defs;
   top.substDefs =
-    (if !null(top.paramNames) then ta.substDefs else []) ++ t.substDefs;
+    (if !null(top.paramNames) then ta.substDefs else fail()) <+ t.substDefs;
   top.inferredArgs = h.inferredArgs ++ t.inferredArgs;
   top.appendedTemplateArgNamesRes = consTemplateArgName(h, t.appendedTemplateArgNamesRes);
   
   local ta::TemplateArg = h.argrep;
   
   t.env = addEnv(h.defs, h.env);
-  t.substEnv = ta.substDefs ++ h.substEnv;
+  t.substEnv = ta.substDefs <+ h.substEnv;
   ta.paramName =
     case top.paramNames of
     | h :: _ -> h
@@ -337,7 +346,7 @@ top::TemplateArgNames ::=
   top.errors := [];
   top.decls = [];
   top.defs := [];
-  top.substDefs = [];
+  top.substDefs = fail();
   top.inferredArgs = [];
   top.appendedTemplateArgNamesRes = top.appendedTemplateArgNames;
 }
@@ -406,7 +415,7 @@ top::TemplateArgName ::= e::Expr
   
   e.returnType = nothing();
   
-  local ty::TypeName = substTypeName(top.substEnv, top.paramKind.fromJust);
+  local ty::TypeName = rewriteWith(topDownSubs(top.substEnv), top.paramKind.fromJust).fromJust;
   ty.env = top.env;
   ty.returnType = nothing();
   top.errors <-

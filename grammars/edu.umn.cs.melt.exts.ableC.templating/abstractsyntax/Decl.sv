@@ -2,10 +2,11 @@ grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
 imports silver:langutil;
 imports silver:langutil:pp;
+imports silver:rewrite;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax:host;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction;
-imports edu:umn:cs:melt:ableC:abstractsyntax:substitution;
+imports edu:umn:cs:melt:ableC:abstractsyntax:rewriting;
 imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 imports edu:umn:cs:melt:ableC:abstractsyntax:overloadable;
 
