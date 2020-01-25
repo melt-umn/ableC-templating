@@ -114,13 +114,8 @@ top::TemplateArg ::= n::String
       location=builtin);
   top.containsErrorType = false;
   top.substDefs =
-    rule on Expr of
-    | directRefExpr(name(n1, location=nLoc), location=eLoc) when n1 == top.paramName ->
-      declRefExpr(name(n, location=nLoc), location=eLoc)
-    | declRefExpr(name(n1, location=nLoc), location=eLoc) when n1 == top.paramName ->
-      declRefExpr(name(n, location=nLoc), location=eLoc)
-    | directCallExpr(name(n1, location=nLoc), args, location=eLoc) when n1 == top.paramName ->
-      directCallExpr(name(n, location=nLoc), args, location=eLoc)
+    rule on Name of
+    | name(n1, location=l) when n1 == top.paramName -> name(n, location=l)
     end;
 }
 
