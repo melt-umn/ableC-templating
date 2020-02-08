@@ -21,7 +21,9 @@ disambiguate TypeName_t, TypenameKwd_t {
 -- Needed to open a scope for the parameters
 terminal OpenScope_t '' action { context = openScope(context); };
 
-closed nonterminal TemplateParameters_c with location, ast<TemplateParameters>;
+closed nonterminal TemplateParameters_c
+  layout {LineComment_t, BlockComment_t, Spaces_t, NewLine_t}
+  with location, ast<TemplateParameters>;
 
 concrete production templateParameters_c
 top::TemplateParameters_c ::= OpenScope_t params::TemplateParams_c

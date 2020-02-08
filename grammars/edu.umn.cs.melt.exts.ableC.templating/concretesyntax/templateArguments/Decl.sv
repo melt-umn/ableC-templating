@@ -9,7 +9,9 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-closed nonterminal TemplateArguments_c with location, ast<TemplateArgNames>;
+closed nonterminal TemplateArguments_c
+  layout {LineComment_t, BlockComment_t, Spaces_t, NewLine_t}
+  with location, ast<TemplateArgNames>;
 
 concrete productions top::TemplateArguments_c
 | h::TemplateArgument_c ',' t::TemplateArguments_c
