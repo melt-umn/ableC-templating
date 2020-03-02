@@ -45,4 +45,8 @@ copper_mda testSilverConstruction(ableCWithTemplates) {
   edu:umn:cs:melt:exts:ableC:templating:silverconstruction;
   edu:umn:cs:melt:exts:silver:ableC:concretesyntax:antiquotation;
   silver:host:core;
+  silver:host:core;
+  silver:extension:patternmatching;
+  silver:extension:list;
+  silver:modification:let_fix;
 }
