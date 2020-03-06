@@ -19,7 +19,7 @@ top::Type ::= q::Qualifiers n::String args::TemplateArgs resolved::Type
     end;
   top.typeModifierExpr = baseTypeExpr();
   top.canonicalType =
-    templatedType(q, n, args.canonicalArgs, resolved.canonicalType);
+    templatedType(q, n, args.canonicalType, resolved.canonicalType);
   top.withoutTypeQualifiers =
     templatedType(nilQualifier(), n, args, resolved.withoutTypeQualifiers);
   top.withoutExtensionQualifiers =
@@ -39,19 +39,18 @@ top::Type ::= q::Qualifiers n::String args::TemplateArgs resolved::Type
 }
 
 synthesized attribute argNames::TemplateArgNames;
-synthesized attribute canonicalArgs::TemplateArgs;
 synthesized attribute containsErrorType::Boolean;
 
-nonterminal TemplateArgs with pps, mangledName, count, argNames, paramNames, canonicalArgs, containsErrorType, substDefs;
+nonterminal TemplateArgs with pps, mangledName, count, argNames, paramNames, canonicalType, containsErrorType, substDefs;
 
 abstract production consTemplateArg
 top::TemplateArgs ::= h::TemplateArg t::TemplateArgs
 {
+  propagate canonicalType;
   top.pps = h.pp :: t.pps;
   top.mangledName = h.mangledName ++ "_" ++ t.mangledName;
   top.count = 1 + t.count;
   top.argNames = consTemplateArgName(h.argName, t.argNames);
-  top.canonicalArgs = consTemplateArg(h.canonicalArg, t.canonicalArgs);
   top.containsErrorType = h.containsErrorType || t.containsErrorType;
   top.substDefs =
     (if !null(top.paramNames) then h.substDefs else fail()) <+ t.substDefs;
@@ -71,7 +70,7 @@ top::TemplateArgs ::= h::TemplateArg t::TemplateArgs
 abstract production nilTemplateArg
 top::TemplateArgs ::=
 {
-  propagate canonicalArgs;
+  propagate canonicalType;
   top.pps = [];
   top.mangledName = "";
   top.count = 0;
@@ -84,17 +83,16 @@ global foldTemplateArg::(TemplateArgs ::= [TemplateArg]) =
   foldr(consTemplateArg, nilTemplateArg(), _);
 
 synthesized attribute argName::TemplateArgName;
-synthesized attribute canonicalArg::TemplateArg;
 
-nonterminal TemplateArg with pp, mangledName, argName, paramName, canonicalArg, containsErrorType, substDefs;
+nonterminal TemplateArg with pp, mangledName, argName, paramName, canonicalType, containsErrorType, substDefs;
 
 abstract production typeTemplateArg
 top::TemplateArg ::= t::Type
 {
+  propagate canonicalType;
   top.pp = cat(t.lpp, t.rpp);
   top.mangledName = t.mangledName;
   top.argName = typeTemplateArgName(typeName(directTypeExpr(t), baseTypeExpr()), location=builtin);
-  top.canonicalArg = typeTemplateArg(t.canonicalType);
   top.containsErrorType = case t of errorType() -> true | _ -> false end;
   top.substDefs =
     rule on BaseTypeExpr of
@@ -105,7 +103,7 @@ top::TemplateArg ::= t::Type
 abstract production nameTemplateArg
 top::TemplateArg ::= n::String
 {
-  propagate canonicalArg;
+  propagate canonicalType;
   top.pp = text(n);
   top.mangledName = n;
   top.argName =
@@ -122,7 +120,7 @@ top::TemplateArg ::= n::String
 abstract production realConstTemplateArg
 top::TemplateArg ::= c::Decorated NumericConstant
 {
-  propagate canonicalArg;
+  propagate canonicalType;
   top.pp = c.pp;
   top.mangledName = c.mangledName;
   top.argName =
@@ -142,7 +140,7 @@ top::TemplateArg ::= c::Decorated NumericConstant
 abstract production characterConstTemplateArg
 top::TemplateArg ::= c::String p::CharPrefix
 {
-  propagate canonicalArg;
+  propagate canonicalType;
   top.pp = text(c);
   top.mangledName = substring(indexOf("'", c) + 1, lastIndexOf("'", c), c);
   top.argName =
@@ -160,7 +158,7 @@ top::TemplateArg ::= c::String p::CharPrefix
 abstract production errorTemplateArg
 top::TemplateArg ::=
 {
-  propagate canonicalArg;
+  propagate canonicalType;
   top.pp = pp"/*err*/";
   top.mangledName = "error";
   top.argName = errorTemplateArgName([], location=builtin);
