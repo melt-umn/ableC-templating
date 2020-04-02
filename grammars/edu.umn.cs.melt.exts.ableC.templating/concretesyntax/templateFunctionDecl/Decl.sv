@@ -47,7 +47,7 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       -- If this is a K&R-style declaration, attatch any function qualifiers to the first declaration instead
       local baseMT  :: ast:TypeModifierExpr = d.ast;
       baseMT.ast:baseType = ast:errorType();
-      baseMT.ast:typeModifiersIn = [];
+      baseMT.ast:typeModifierIn = ast:baseTypeExpr();
       baseMT.ast:returnType = nothing();
       local mt :: ast:TypeModifierExpr =
         case l.isDeclListEmpty, baseMT of
@@ -82,7 +82,7 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       -- If this is a K&R-style declaration, attatch any function qualifiers to the first declaration instead
       local baseMT  :: ast:TypeModifierExpr = d.ast;
       baseMT.ast:baseType = ast:errorType();
-      baseMT.ast:typeModifiersIn = [];
+      baseMT.ast:typeModifierIn = ast:baseTypeExpr();
       baseMT.ast:returnType = nothing();
       local mt :: ast:TypeModifierExpr =
         case l.isDeclListEmpty, baseMT of

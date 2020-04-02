@@ -83,12 +83,6 @@ top::BaseTypeExpr ::= msg::[Message]  ty::BaseTypeExpr
   ty.argumentType = top.argumentType;
 }
 
-aspect production completedTypeExpr
-top::BaseTypeExpr ::= t::Type
-{
-  top.inferredArgs = [];
-}
-
 aspect production decTypeExpr
 top::BaseTypeExpr ::= ty::Decorated BaseTypeExpr
 {
@@ -224,7 +218,7 @@ top::TypeModifierExpr ::= ty::Decorated TypeModifierExpr
   newTy.env = top.env;
   newTy.returnType = top.returnType;
   newTy.baseType = top.baseType;
-  newTy.typeModifiersIn = top.typeModifiersIn;
+  newTy.typeModifierIn = top.typeModifierIn;
   newTy.argumentType = top.argumentType;
 }
 
