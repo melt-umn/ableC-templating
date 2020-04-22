@@ -111,7 +111,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
   
   -- Better template parameter inference, non-interfering since it's not an error if
   -- we try to infer on the forward instead.
-  top.inferredArgs =
+  top.inferredArgs :=
     case top.argumentType of
     | templatedType(_, n1, _, _) ->
       if n.name == n1 then tas.inferredArgs else forwardInferredTypes
@@ -287,18 +287,16 @@ synthesized attribute appendedTemplateArgNamesRes :: TemplateArgNames;
 nonterminal TemplateArgNames with pps, env, substEnv, paramNames, paramKinds, argreps, count, errors, decls, defs, substDefs, arguments, inferredArgs, appendedTemplateArgNames, appendedTemplateArgNamesRes;
 flowtype TemplateArgNames = decorate {env, substEnv, paramNames, paramKinds}, pps {}, count {}, argreps {decorate}, errors {decorate}, defs {decorate}, substDefs {decorate}, inferredArgs {decorate, arguments}, appendedTemplateArgNamesRes {appendedTemplateArgNames};
 
+propagate errors, decls, defs, inferredArgs on TemplateArgNames;
+
 abstract production consTemplateArgName
 top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
 {
   top.pps = h.pp :: t.pps;
   top.argreps = consTemplateArg(h.argrep, t.argreps);
   top.count = 1 + t.count;
-  top.errors := h.errors ++ t.errors;
-  top.decls = h.decls ++ t.decls;
-  top.defs := h.defs ++ t.defs;
   top.substDefs =
     (if !null(top.paramNames) then ta.substDefs else fail()) <+ t.substDefs;
-  top.inferredArgs = h.inferredArgs ++ t.inferredArgs;
   top.appendedTemplateArgNamesRes = consTemplateArgName(h, t.appendedTemplateArgNamesRes);
   
   local ta::TemplateArg = h.argrep;
@@ -343,11 +341,7 @@ top::TemplateArgNames ::=
   top.pps = [];
   top.argreps = nilTemplateArg();
   top.count = 0;
-  top.errors := [];
-  top.decls = [];
-  top.defs := [];
   top.substDefs = fail();
-  top.inferredArgs = [];
   top.appendedTemplateArgNamesRes = top.appendedTemplateArgNames;
 }
 
@@ -370,23 +364,21 @@ flowtype TemplateArgName = decorate {env, substEnv, paramKind}, pp {}, argrep {d
 abstract production typeTemplateArgName
 top::TemplateArgName ::= ty::TypeName
 {
+  propagate errors, decls, defs;
   top.pp = ty.pp;
   top.argrep = typeTemplateArg(ty.typerep);
-  top.errors := ty.errors;
   top.errors <-
     case top.paramKind of
     | just(_) -> [err(top.location, "Template value parameter given type argument")]
     | nothing() -> []
     end;
-  top.decls = ty.decls;
-  top.defs := ty.defs;
   
   ty.returnType = nothing();
   ty.argumentType =
     case top.argument of
     | typeTemplateArg(t) -> t
     end;
-  top.inferredArgs =
+  top.inferredArgs :=
     case top.argument of
     | typeTemplateArg(_) -> ty.inferredArgs
     | _ -> []
@@ -427,9 +419,9 @@ top::TemplateArgName ::= e::Expr
       else [err(top.location, s"Template value parameter expected ${showType(ty.typerep)} but got ${showType(e.typerep)}")]
     | nothing() -> [err(top.location, "Template type parameter given value argument")]
     end;
-  top.decls = if null(top.errors) then ty.decls else [];
+  top.decls := if null(top.errors) then ty.decls else [];
   top.defs := if null(top.errors) then ty.defs else [];
-  top.inferredArgs =
+  top.inferredArgs :=
     case e of
     | declRefExpr(n) -> [pair(n.name, top.argument)]
     | _ -> []
@@ -439,12 +431,10 @@ top::TemplateArgName ::= e::Expr
 abstract production errorTemplateArgName
 top::TemplateArgName ::= msg::[Message]
 {
+  propagate decls, defs, inferredArgs;
   top.pp = pp"/*err*/";
   top.argrep = errorTemplateArg();
   top.errors := msg;
-  top.decls = [];
-  top.defs := [];
-  top.inferredArgs = [];
 }
 
 function templateMangledName
