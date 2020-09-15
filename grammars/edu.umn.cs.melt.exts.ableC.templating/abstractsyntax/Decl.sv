@@ -210,6 +210,8 @@ synthesized attribute appendedTemplateParametersRes :: TemplateParameters;
 nonterminal TemplateParameters with pps, names, kinds, count, errors, appendedTemplateParameters, appendedTemplateParametersRes;
 flowtype TemplateParameters = decorate {}, pps {}, names {}, kinds {decorate}, errors {decorate}, appendedTemplateParametersRes {appendedTemplateParameters};
 
+propagate errors on TemplateParameters;
+
 abstract production consTemplateParameter
 top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
 {
@@ -217,7 +219,6 @@ top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
   top.names = h.name :: t.names;
   top.kinds = h.kind :: t.kinds;
   top.count = t.count + 1;
-  top.errors := t.errors;
   top.appendedTemplateParametersRes = consTemplateParameter(h, t.appendedTemplateParametersRes);
   
   top.errors <-
@@ -233,7 +234,6 @@ top::TemplateParameters ::=
   top.names = [];
   top.kinds = [];
   top.count = 0;
-  top.errors := [];
   top.appendedTemplateParametersRes = top.appendedTemplateParameters;
 }
 
