@@ -1,7 +1,5 @@
 grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-import core:monad;
-
 abstract production templateDirectRefExpr
 top::Expr ::= n::Name tas::TemplateArgNames
 {
