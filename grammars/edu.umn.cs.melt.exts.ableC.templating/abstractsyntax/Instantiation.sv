@@ -457,7 +457,7 @@ Maybe<[a]> ::= env::[Pair<String a>] ns::[String]
         \ n::String ->
           \ rest::[a] ->
             do (bindMaybe, returnMaybe) {
-              x :: a <- lookupBy(stringEq, n, env);
+              x :: a <- lookup(n, env);
               return x :: rest;
             },
         ns));
