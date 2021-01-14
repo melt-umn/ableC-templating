@@ -62,7 +62,7 @@ top::Expr ::= n::Name a::Exprs
           position = 0;
           argumentTypes = a.typereps;
         }.inferredArgs;
-      tas::[TemplateArg] <- lookupAll(inferredArgs, templateItem.templateParams);
+      tas::[TemplateArg] <- lookupAllItems(inferredArgs, templateItem.templateParams);
       return foldr(consTemplateArg, nilTemplateArg(), tas);
     };
   
@@ -447,7 +447,8 @@ String ::= n::String params::TemplateArgs
   return s"edu:umn:cs:melt:exts:ableC:templating:${templateMangledName(n, params)}";
 }
 
-function lookupAll
+-- Ugh this is gross, replace with sequence(map(lookup(_, env), ns)) once we have Monads
+function lookupAllItems
 Maybe<[a]> ::= env::[Pair<String a>] ns::[String]
 {
   return
@@ -457,7 +458,7 @@ Maybe<[a]> ::= env::[Pair<String a>] ns::[String]
         \ n::String ->
           \ rest::[a] ->
             do (bindMaybe, returnMaybe) {
-              x :: a <- lookupBy(stringEq, n, env);
+              x :: a <- lookup(n, env);
               return x :: rest;
             },
         ns));

@@ -222,7 +222,7 @@ top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
   top.appendedTemplateParametersRes = consTemplateParameter(h, t.appendedTemplateParametersRes);
   
   top.errors <-
-    if containsBy(stringEq, h.name, t.names)
+    if contains(h.name, t.names)
     then [err(h.location, "Duplicate template parameter " ++ h.name)]
     else [];
 }
