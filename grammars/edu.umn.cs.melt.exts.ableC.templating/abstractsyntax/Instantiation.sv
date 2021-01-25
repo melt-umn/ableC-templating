@@ -53,16 +53,16 @@ top::Expr ::= n::Name a::Exprs
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   local inferredTemplateArguments::Maybe<TemplateArgs> =
-    do (bindMaybe, returnMaybe) {
+    do {
       params::Parameters <- templateItem.maybeParameters;
-      inferredArgs::[Pair<String TemplateArg>] =
+      let inferredArgs::[Pair<String TemplateArg>] =
         decorate params with {
           env = top.env;
           returnType = top.returnType;
           position = 0;
           argumentTypes = a.typereps;
         }.inferredArgs;
-      tas::[TemplateArg] <- lookupAllItems(inferredArgs, templateItem.templateParams);
+      tas::[TemplateArg] <- traverseA(lookup(_, inferredArgs), templateItem.templateParams);
       return foldr(consTemplateArg, nilTemplateArg(), tas);
     };
   
@@ -446,28 +446,3 @@ String ::= n::String params::TemplateArgs
 {
   return s"edu:umn:cs:melt:exts:ableC:templating:${templateMangledName(n, params)}";
 }
-
--- Ugh this is gross, replace with sequence(map(lookup(_, env), ns)) once we have Monads
-function lookupAllItems
-Maybe<[a]> ::= env::[Pair<String a>] ns::[String]
-{
-  return
-    foldr(
-      bindMaybeSwapped, returnMaybe([]),
-      map(
-        \ n::String ->
-          \ rest::[a] ->
-            do (bindMaybe, returnMaybe) {
-              x :: a <- lookup(n, env);
-              return x :: rest;
-            },
-        ns));
-}
-
--- Bind paramters are backwards, ugh.
-function bindMaybeSwapped
-Maybe<b> ::= x::(Maybe<b> ::= a) y::Maybe<a>
-{
-  return bindMaybe(y, x);
-}
-
