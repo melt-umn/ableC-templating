@@ -1,5 +1,6 @@
 grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
+imports silver:core hiding fail;
 imports silver:langutil;
 imports silver:langutil:pp;
 imports silver:rewrite;
