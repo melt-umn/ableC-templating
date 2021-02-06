@@ -74,6 +74,8 @@ top::BaseTypeExpr ::= ty::Decorated BaseTypeExpr
   local newTy::BaseTypeExpr = new(ty);
   newTy.env = top.env;
   newTy.returnType = top.returnType;
+  newTy.breakValid = top.breakValid;
+  newTy.continueValid = top.continueValid;
   newTy.givenRefId = top.givenRefId;
   newTy.argumentType = top.argumentType;
 }
@@ -146,6 +148,8 @@ top::TypeModifierExpr ::= ty::Decorated TypeModifierExpr
   local newTy::TypeModifierExpr = new(ty);
   newTy.env = top.env;
   newTy.returnType = top.returnType;
+  newTy.breakValid = top.breakValid;
+  newTy.continueValid = top.continueValid;
   newTy.baseType = top.baseType;
   newTy.typeModifierIn = top.typeModifierIn;
   newTy.argumentType = top.argumentType;

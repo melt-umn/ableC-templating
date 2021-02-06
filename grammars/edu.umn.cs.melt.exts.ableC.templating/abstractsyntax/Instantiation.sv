@@ -59,6 +59,8 @@ top::Expr ::= n::Name a::Exprs
         decorate params with {
           env = top.env;
           returnType = top.returnType;
+          breakValid = top.breakValid;
+          continueValid = top.continueValid;
           position = 0;
           argumentTypes = a.typereps;
         }.inferredArgs;
@@ -128,6 +130,8 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
       case templateItem of templateTypeTemplateItem(_, _, _, ty) -> new(ty) end).fromJust;
   forwardTypeName.env = globalEnv(top.env);
   forwardTypeName.returnType = nothing();
+  forwardTypeName.breakValid = false;
+  forwardTypeName.continueValid = false;
   forwardTypeName.argumentType = top.argumentType;
   local forwardInferredTypes::[Pair<String TemplateArg>] =
     case templateItem of
@@ -188,6 +192,8 @@ top::Decl ::= n::Name tas::TemplateArgs
   fwrd.isTopLevel = true;
   fwrd.env = top.env;
   fwrd.returnType = nothing();
+  fwrd.breakValid = false;
+  fwrd.continueValid = false;
   
   forwards to
     if templateItem.isItemError || tas.containsErrorType || !null(localErrors)
@@ -252,6 +258,8 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
   fwrd.isTopLevel = true;
   fwrd.env = top.env;
   fwrd.returnType = nothing();
+  fwrd.breakValid = false;
+  fwrd.continueValid = false;
   
   forwards to
     if templateItem.isItemError || tas.containsErrorType || !null(localErrors)
@@ -372,6 +380,8 @@ top::TemplateArgName ::= ty::TypeName
     end;
   
   ty.returnType = nothing();
+  ty.breakValid = false;
+  ty.continueValid = false;
   ty.argumentType =
     case top.argument of
     | typeTemplateArg(t) -> t
@@ -404,10 +414,14 @@ top::TemplateArgName ::= e::Expr
     end;
   
   e.returnType = nothing();
+  e.breakValid = false;
+  e.continueValid = false;
   
   local ty::TypeName = rewriteWith(topDownSubs(top.substEnv), top.paramKind.fromJust).fromJust;
   ty.env = top.env;
   ty.returnType = nothing();
+  ty.breakValid = false;
+  ty.continueValid = false;
   top.errors <-
     case top.paramKind of
     | just(_) ->

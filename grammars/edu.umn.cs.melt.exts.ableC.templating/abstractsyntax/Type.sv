@@ -173,6 +173,8 @@ Type ::= q::Qualifiers n::String args::[TemplateArg] env::Decorated Env
     templateTypedefTypeExpr(q, name(n, location=builtin), foldTemplateArg(args).argNames);
   result.env = env;
   result.returnType = nothing();
+  result.breakValid = false;
+  result.continueValid = false;
   result.givenRefId = nothing();
   
   return result.typerep;

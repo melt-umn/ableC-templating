@@ -49,6 +49,8 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       baseMT.ast:baseType = ast:errorType();
       baseMT.ast:typeModifierIn = ast:baseTypeExpr();
       baseMT.ast:returnType = nothing();
+      baseMT.ast:breakValid = false;
+      baseMT.ast:continueValid = false;
       local mt :: ast:TypeModifierExpr =
         case l.isDeclListEmpty, baseMT of
         | false, ast:functionTypeExprWithArgs(t, p, v, q) ->
@@ -84,6 +86,8 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       baseMT.ast:baseType = ast:errorType();
       baseMT.ast:typeModifierIn = ast:baseTypeExpr();
       baseMT.ast:returnType = nothing();
+      baseMT.ast:breakValid = false;
+      baseMT.ast:continueValid = false;
       local mt :: ast:TypeModifierExpr =
         case l.isDeclListEmpty, baseMT of
         | false, ast:functionTypeExprWithArgs(t, p, v, q) ->
