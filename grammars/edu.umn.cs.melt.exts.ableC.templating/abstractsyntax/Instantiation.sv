@@ -127,7 +127,10 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
   local forwardTypeName::TypeName =
     rewriteWith(
       topDownSubs(tas.substDefs),
-      case templateItem of templateTypeTemplateItem(_, _, _, ty) -> new(ty) end).fromJust;
+      case templateItem of
+      | templateTypeTemplateItem(_, _, _, ty) -> new(ty)
+      | _ -> error("Not a template type")
+      end).fromJust;
   forwardTypeName.env = globalEnv(top.env);
   forwardTypeName.returnType = nothing();
   forwardTypeName.breakValid = false;
@@ -385,6 +388,7 @@ top::TemplateArgName ::= ty::TypeName
   ty.argumentType =
     case top.argument of
     | typeTemplateArg(t) -> t
+    | _ -> error("argumentType demanded when argument is not a typeTemplateArg")
     end;
   top.inferredArgs :=
     case top.argument of

@@ -36,6 +36,7 @@ concrete productions top::TemplateInitialFunctionDefinition_c
         case baseMT of
         | ast:functionTypeExprWithArgs(t, p, v, q) -> q
         | ast:functionTypeExprWithoutArgs(t, v, q) -> q
+        | _ -> ast:nilQualifier()
         end;
 
       local specialSpecifiers :: ast:SpecialSpecifiers =
@@ -76,6 +77,7 @@ concrete productions top::TemplateInitialFunctionDefinition_c
         case baseMT of
         | ast:functionTypeExprWithArgs(t, p, v, q) -> q
         | ast:functionTypeExprWithoutArgs(t, v, q) -> q
+        | _ -> ast:nilQualifier()
         end;
       
       local bt :: ast:BaseTypeExpr =
