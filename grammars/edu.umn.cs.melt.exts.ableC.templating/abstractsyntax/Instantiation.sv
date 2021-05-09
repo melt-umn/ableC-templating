@@ -58,9 +58,7 @@ top::Expr ::= n::Name a::Exprs
       let inferredArgs::[Pair<String TemplateArg>] =
         decorate params with {
           env = top.env;
-          returnType = top.returnType;
-          breakValid = top.breakValid;
-          continueValid = top.continueValid;
+          controlStmtContext = top.controlStmtContext;
           position = 0;
           argumentTypes = a.typereps;
         }.inferredArgs;
@@ -132,9 +130,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
       | _ -> error("Not a template type")
       end).fromJust;
   forwardTypeName.env = globalEnv(top.env);
-  forwardTypeName.returnType = nothing();
-  forwardTypeName.breakValid = false;
-  forwardTypeName.continueValid = false;
+  forwardTypeName.controlStmtContext = initialControlStmtContext;
   forwardTypeName.argumentType = top.argumentType;
   local forwardInferredTypes::[Pair<String TemplateArg>] =
     case templateItem of
@@ -194,9 +190,7 @@ top::Decl ::= n::Name tas::TemplateArgs
         templateItem.decl(name(mangledName, location=builtin))).fromJust;
   fwrd.isTopLevel = true;
   fwrd.env = top.env;
-  fwrd.returnType = nothing();
-  fwrd.breakValid = false;
-  fwrd.continueValid = false;
+  fwrd.controlStmtContext = initialControlStmtContext;
   
   forwards to
     if templateItem.isItemError || tas.containsErrorType || !null(localErrors)
@@ -260,9 +254,7 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
           templateItem.decl(name(mangledName, location=builtin))).fromJust;
   fwrd.isTopLevel = true;
   fwrd.env = top.env;
-  fwrd.returnType = nothing();
-  fwrd.breakValid = false;
-  fwrd.continueValid = false;
+  fwrd.controlStmtContext = initialControlStmtContext;
   
   forwards to
     if templateItem.isItemError || tas.containsErrorType || !null(localErrors)
@@ -382,9 +374,7 @@ top::TemplateArgName ::= ty::TypeName
     | nothing() -> []
     end;
   
-  ty.returnType = nothing();
-  ty.breakValid = false;
-  ty.continueValid = false;
+  ty.controlStmtContext = initialControlStmtContext;
   ty.argumentType =
     case top.argument of
     | typeTemplateArg(t) -> t
@@ -417,15 +407,11 @@ top::TemplateArgName ::= e::Expr
     | _ -> [err(e.location, s"Invalid template argument expression: ${show(80, e.pp)}")]
     end;
   
-  e.returnType = nothing();
-  e.breakValid = false;
-  e.continueValid = false;
+  e.controlStmtContext = initialControlStmtContext;
   
   local ty::TypeName = rewriteWith(topDownSubs(top.substEnv), top.paramKind.fromJust).fromJust;
   ty.env = top.env;
-  ty.returnType = nothing();
-  ty.breakValid = false;
-  ty.continueValid = false;
+  ty.controlStmtContext = initialControlStmtContext;
   top.errors <-
     case top.paramKind of
     | just(_) ->

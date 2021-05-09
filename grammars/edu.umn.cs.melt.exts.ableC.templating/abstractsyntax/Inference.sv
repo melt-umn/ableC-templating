@@ -73,9 +73,7 @@ top::BaseTypeExpr ::= ty::Decorated BaseTypeExpr
   top.inferredArgs <- newTy.inferredArgs;
   local newTy::BaseTypeExpr = new(ty);
   newTy.env = top.env;
-  newTy.returnType = top.returnType;
-  newTy.breakValid = top.breakValid;
-  newTy.continueValid = top.continueValid;
+  newTy.controlStmtContext = top.controlStmtContext;
   newTy.givenRefId = top.givenRefId;
   newTy.argumentType = top.argumentType;
 }
@@ -147,9 +145,7 @@ top::TypeModifierExpr ::= ty::Decorated TypeModifierExpr
   top.argumentBaseType = newTy.argumentBaseType;
   local newTy::TypeModifierExpr = new(ty);
   newTy.env = top.env;
-  newTy.returnType = top.returnType;
-  newTy.breakValid = top.breakValid;
-  newTy.continueValid = top.continueValid;
+  newTy.controlStmtContext = top.controlStmtContext;
   newTy.baseType = top.baseType;
   newTy.typeModifierIn = top.typeModifierIn;
   newTy.argumentType = top.argumentType;
