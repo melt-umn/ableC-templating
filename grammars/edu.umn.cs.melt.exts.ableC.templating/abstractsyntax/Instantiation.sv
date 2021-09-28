@@ -1,7 +1,5 @@
 grammar edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-import core:monad;
-
 abstract production templateDirectRefExpr
 top::Expr ::= n::Name tas::TemplateArgNames
 {
@@ -55,16 +53,16 @@ top::Expr ::= n::Name a::Exprs
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   local inferredTemplateArguments::Maybe<TemplateArgs> =
-    do (bindMaybe, returnMaybe) {
+    do {
       params::Parameters <- templateItem.maybeParameters;
-      inferredArgs::[Pair<String TemplateArg>] =
+      let inferredArgs::[Pair<String TemplateArg>] =
         decorate params with {
           env = top.env;
-          returnType = top.returnType;
+          controlStmtContext = top.controlStmtContext;
           position = 0;
           argumentTypes = a.typereps;
         }.inferredArgs;
-      tas::[TemplateArg] <- lookupAll(inferredArgs, templateItem.templateParams);
+      tas::[TemplateArg] <- traverseA(lookup(_, inferredArgs), templateItem.templateParams);
       return foldr(consTemplateArg, nilTemplateArg(), tas);
     };
   
@@ -127,9 +125,12 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
   local forwardTypeName::TypeName =
     rewriteWith(
       topDownSubs(tas.substDefs),
-      case templateItem of templateTypeTemplateItem(_, _, _, ty) -> new(ty) end).fromJust;
+      case templateItem of
+      | templateTypeTemplateItem(_, _, _, ty) -> new(ty)
+      | _ -> error("Not a template type")
+      end).fromJust;
   forwardTypeName.env = globalEnv(top.env);
-  forwardTypeName.returnType = nothing();
+  forwardTypeName.controlStmtContext = initialControlStmtContext;
   forwardTypeName.argumentType = top.argumentType;
   local forwardInferredTypes::[Pair<String TemplateArg>] =
     case templateItem of
@@ -189,7 +190,7 @@ top::Decl ::= n::Name tas::TemplateArgs
         templateItem.decl(name(mangledName, location=builtin))).fromJust;
   fwrd.isTopLevel = true;
   fwrd.env = top.env;
-  fwrd.returnType = nothing();
+  fwrd.controlStmtContext = initialControlStmtContext;
   
   forwards to
     if templateItem.isItemError || tas.containsErrorType || !null(localErrors)
@@ -253,7 +254,7 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
           templateItem.decl(name(mangledName, location=builtin))).fromJust;
   fwrd.isTopLevel = true;
   fwrd.env = top.env;
-  fwrd.returnType = nothing();
+  fwrd.controlStmtContext = initialControlStmtContext;
   
   forwards to
     if templateItem.isItemError || tas.containsErrorType || !null(localErrors)
@@ -373,10 +374,11 @@ top::TemplateArgName ::= ty::TypeName
     | nothing() -> []
     end;
   
-  ty.returnType = nothing();
+  ty.controlStmtContext = initialControlStmtContext;
   ty.argumentType =
     case top.argument of
     | typeTemplateArg(t) -> t
+    | _ -> error("argumentType demanded when argument is not a typeTemplateArg")
     end;
   top.inferredArgs :=
     case top.argument of
@@ -405,11 +407,11 @@ top::TemplateArgName ::= e::Expr
     | _ -> [err(e.location, s"Invalid template argument expression: ${show(80, e.pp)}")]
     end;
   
-  e.returnType = nothing();
+  e.controlStmtContext = initialControlStmtContext;
   
   local ty::TypeName = rewriteWith(topDownSubs(top.substEnv), top.paramKind.fromJust).fromJust;
   ty.env = top.env;
-  ty.returnType = nothing();
+  ty.controlStmtContext = initialControlStmtContext;
   top.errors <-
     case top.paramKind of
     | just(_) ->
@@ -448,27 +450,3 @@ String ::= n::String params::TemplateArgs
 {
   return s"edu:umn:cs:melt:exts:ableC:templating:${templateMangledName(n, params)}";
 }
-
-function lookupAll
-Maybe<[a]> ::= env::[Pair<String a>] ns::[String]
-{
-  return
-    foldr(
-      bindMaybeSwapped, returnMaybe([]),
-      map(
-        \ n::String ->
-          \ rest::[a] ->
-            do (bindMaybe, returnMaybe) {
-              x :: a <- lookupBy(stringEq, n, env);
-              return x :: rest;
-            },
-        ns));
-}
-
--- Bind paramters are backwards, ugh.
-function bindMaybeSwapped
-Maybe<b> ::= x::(Maybe<b> ::= a) y::Maybe<a>
-{
-  return bindMaybe(y, x);
-}
-
