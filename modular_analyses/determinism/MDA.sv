@@ -44,8 +44,8 @@ parser ableCWithTemplates :: Root {
 copper_mda testSilverConstruction(ableCWithTemplates) {
   edu:umn:cs:melt:exts:ableC:templating:silverconstruction;
   edu:umn:cs:melt:exts:silver:ableC:concretesyntax:antiquotation;
-  silver:host:core;
-  silver:extension:patternmatching;
-  silver:extension:list;
-  silver:modification:let_fix;
+  silver:compiler:host:core;
+  silver:compiler:extension:patternmatching;
+  silver:compiler:modification:list;
+  silver:compiler:modification:let_fix;
 }
