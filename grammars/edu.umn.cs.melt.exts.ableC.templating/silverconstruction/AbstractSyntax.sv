@@ -28,16 +28,14 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   collectionAntiquoteProductions <-
-    [pair(
-       "edu:umn:cs:melt:exts:ableC:templating:silverconstruction:antiquoteTemplateParameters",
-       pair("TemplateParameters",
-         pair(
-           "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:consTemplateParameter",
-           "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:appendTemplateParameters"))),
-     pair(
-       "edu:umn:cs:melt:exts:ableC:templating:silverconstruction:antiquoteTemplateArgNames",
-       pair("TemplateArgNames",
-         pair(
-           "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:consTemplateArgName",
-           "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:appendTemplateArgNames")))];
+    [("edu:umn:cs:melt:exts:ableC:templating:silverconstruction:antiquoteTemplateParameters",
+      "TemplateParameters",
+      "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:consTemplateParameter",
+      "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:nilTemplateParameter",
+      "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:appendTemplateParameters"),
+     ("edu:umn:cs:melt:exts:ableC:templating:silverconstruction:antiquoteTemplateArgNames",
+      "TemplateArgNames",
+      "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:consTemplateArgName",
+      "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:nilTemplateArgName",
+      "edu:umn:cs:melt:exts:ableC:templating:abstractsyntax:appendTemplateArgNames")];
 }
