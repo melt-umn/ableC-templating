@@ -5,6 +5,7 @@ imports silver:langutil;
 imports edu:umn:cs:melt:ableC:concretesyntax;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax:host as ast;
+imports edu:umn:cs:melt:ableC:abstractsyntax:env as ast;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 imports edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationExpr;
@@ -49,6 +50,7 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       local baseMT  :: ast:TypeModifierExpr = d.ast;
       baseMT.ast:baseType = ast:errorType();
       baseMT.ast:typeModifierIn = ast:baseTypeExpr();
+      baseMT.ast:env = ast:emptyEnv();
       baseMT.ast:controlStmtContext = ast:initialControlStmtContext;
       local mt :: ast:TypeModifierExpr =
         case l.isDeclListEmpty, baseMT of
@@ -85,6 +87,7 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       local baseMT  :: ast:TypeModifierExpr = d.ast;
       baseMT.ast:baseType = ast:errorType();
       baseMT.ast:typeModifierIn = ast:baseTypeExpr();
+      baseMT.ast:env = ast:emptyEnv();
       baseMT.ast:controlStmtContext = ast:initialControlStmtContext;
       local mt :: ast:TypeModifierExpr =
         case l.isDeclListEmpty, baseMT of
