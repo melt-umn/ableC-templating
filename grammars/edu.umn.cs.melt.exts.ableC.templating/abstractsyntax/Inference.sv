@@ -99,7 +99,7 @@ top::BaseTypeExpr ::= q::Qualifiers  name::Name
     | errorType() -> [] -- We might find an actual type later on
     -- TODO: Better treatment of type qualifiers here, maybe?
     -- Take union of all positive qualifiers and intersection of all negative qualifiers
-    | t -> [pair(name.name, typeTemplateArg(t.withoutTypeQualifiers))]
+    | t -> [(name.name, typeTemplateArg(t.withoutTypeQualifiers))]
     end;
 }
 
