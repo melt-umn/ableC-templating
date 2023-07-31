@@ -4,7 +4,7 @@ synthesized attribute templateParams::[String];
 synthesized attribute decl::(Decl ::= Name);
 synthesized attribute isItemError::Boolean;
 
-closed nonterminal TemplateItem with templateParams, kinds, decl, maybeParameters, sourceLocation, isItemValue, isItemType, isItemError;
+closed tracked nonterminal TemplateItem with templateParams, kinds, decl, maybeParameters, isItemValue, isItemType, isItemError;
 
 aspect default production
 top::TemplateItem ::=
@@ -16,27 +16,25 @@ top::TemplateItem ::=
 }
 
 abstract production typeTemplateItem
-top::TemplateItem ::= sourceLocation::Location params::[String] kinds::[Maybe<TypeName>] decl::(Decl ::= Name)
+top::TemplateItem ::= params::[String] kinds::[Maybe<TypeName>] decl::(Decl ::= Name)
 {
   top.templateParams = params;
   top.kinds = kinds;
   top.decl = decl;
-  top.sourceLocation = sourceLocation;
   top.isItemType = true;
 }
 
 abstract production valueTemplateItem
-top::TemplateItem ::= sourceLocation::Location params::[String] kinds::[Maybe<TypeName>] decl::(Decl ::= Name)
+top::TemplateItem ::= params::[String] kinds::[Maybe<TypeName>] decl::(Decl ::= Name)
 {
   top.templateParams = params;
   top.kinds = kinds;
   top.decl = decl;
-  top.sourceLocation = sourceLocation;
   top.isItemValue = true;
 }
 
 abstract production templateTypeTemplateItem
-top::TemplateItem ::= sourceLocation::Location params::[String] kinds::[Maybe<TypeName>] ty::TypeName
+top::TemplateItem ::= params::[String] kinds::[Maybe<TypeName>] ty::TypeName
 {
   top.templateParams = params;
   top.kinds = kinds;
@@ -48,18 +46,16 @@ top::TemplateItem ::= sourceLocation::Location params::[String] kinds::[Maybe<Ty
         consDeclarator(
           declarator(mangledName, ty.mty, nilAttribute(), nothingInitializer()),
           nilDeclarator()));
-  top.sourceLocation = sourceLocation;
   top.isItemType = true;
 }
 
 abstract production functionTemplateItem
-top::TemplateItem ::= sourceLocation::Location params::[String] kinds::[Maybe<TypeName>] decl::Decorated FunctionDecl
+top::TemplateItem ::= params::[String] kinds::[Maybe<TypeName>] decl::Decorated FunctionDecl
 {
   top.templateParams = params;
   top.kinds = kinds;
   top.decl = instFunctionDeclaration(_, new(decl));
   top.maybeParameters = decl.maybeParameters;
-  top.sourceLocation = sourceLocation;
   top.isItemValue = true;
 }
 
@@ -69,7 +65,6 @@ top::TemplateItem ::=
   top.templateParams = [];
   top.kinds = [];
   top.decl = \ n::Name -> decls(nilDecl());
-  top.sourceLocation = builtin;
   top.isItemValue = true;
   top.isItemType = true;
   top.isItemError = true;
@@ -148,7 +143,7 @@ top::Name ::= n::String
   local templates::[TemplateItem] = lookupTemplate(n, top.env);
   top.templateLookupCheck =
     case templates of
-    | [] -> [err(top.location, "Undeclared templated name " ++ n)]
+    | [] -> [errFromOrigin(top, "Undeclared templated name " ++ n)]
     | _ :: _ -> []
     end;
   
@@ -156,9 +151,9 @@ top::Name ::= n::String
     case templates of
     | [] -> []
     | v :: _ ->
-        [err(top.location, 
+        [errFromOrigin(top, 
           "Redeclaration of " ++ n ++ ". Original (from " ++
-          v.sourceLocation.unparse ++ ")")]
+          getParsedOriginLocationOrFallback(v).unparse ++ ")")]
     end;
   
   local template::TemplateItem = if null(templates) then errorTemplateItem() else head(templates);

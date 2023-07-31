@@ -27,7 +27,7 @@ action {
 }
 
 -- Duplicated from InitialFunctionDefinition_c due to MDA requirments
-nonterminal TemplateInitialFunctionDefinition_c with location, ast<ast:FunctionDecl>, declaredIdent, givenStmt;
+tracked nonterminal TemplateInitialFunctionDefinition_c with ast<ast:FunctionDecl>, declaredIdent, givenStmt;
 concrete productions top::TemplateInitialFunctionDefinition_c
 | ds::DeclarationSpecifiers_c  d::Declarator_c  l::InitiallyUnqualifiedDeclarationList_c
     {
@@ -44,7 +44,7 @@ concrete productions top::TemplateInitialFunctionDefinition_c
         foldr(ast:consSpecialSpecifier, ast:nilSpecialSpecifier(), ds.specialSpecifiers);
       
       local bt :: ast:BaseTypeExpr =
-        ast:figureOutTypeFromSpecifiers(ds.location, ds.typeQualifiers, ds.preTypeSpecifiers, ds.realTypeSpecifiers, ds.mutateTypeSpecifiers);
+        ast:figureOutTypeFromSpecifiers(ds.typeQualifiers, ds.preTypeSpecifiers, ds.realTypeSpecifiers, ds.mutateTypeSpecifiers);
       
       -- If this is a K&R-style declaration, attatch any function qualifiers to the first declaration instead
       local baseMT  :: ast:TypeModifierExpr = d.ast;
@@ -81,7 +81,7 @@ concrete productions top::TemplateInitialFunctionDefinition_c
         end;
       
       local bt :: ast:BaseTypeExpr =
-        ast:figureOutTypeFromSpecifiers(d.location, ast:nilQualifier(), [], [], []);
+        ast:figureOutTypeFromSpecifiers(ast:nilQualifier(), [], [], []);
       
       -- If this is a K&R-style declaration, attatch any function qualifiers to the first declaration instead
       local baseMT  :: ast:TypeModifierExpr = d.ast;

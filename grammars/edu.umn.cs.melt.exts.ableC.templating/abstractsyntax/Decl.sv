@@ -11,8 +11,6 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:rewriting;
 imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 imports edu:umn:cs:melt:ableC:abstractsyntax:overloadable;
 
-global builtin::Location = builtinLoc("templating");
-
 abstract production templateTypeDecl
 top::Decl ::= params::TemplateParameters n::Name ty::TypeName
 {
@@ -21,11 +19,11 @@ top::Decl ::= params::TemplateParameters n::Name ty::TypeName
   
   local localErrors::[Message] =
     if !top.isTopLevel
-    then [err(n.location, "Template declarations must be global")]
+    then [errFromOrigin(n, "Template declarations must be global")]
     else n.templateRedeclarationCheck ++ params.errors;
   
   local fwrd::Decl =
-    defsDecl([templateDef(n.name, templateTypeTemplateItem(n.location, params.names, params.kinds, ty))]);
+    defsDecl([templateDef(n.name, templateTypeTemplateItem(params.names, params.kinds, ty))]);
   
   forwards to
     if !null(localErrors)
@@ -44,7 +42,7 @@ top::Decl ::= params::TemplateParameters attrs::Attributes n::Name dcls::StructI
   
   local localErrors::[Message] =
     if !top.isTopLevel
-    then [err(n.location, "Template declarations must be global")]
+    then [errFromOrigin(n, "Template declarations must be global")]
     else n.templateRedeclarationCheck ++ params.errors;
   
   local fwrd::Decl =
@@ -52,7 +50,7 @@ top::Decl ::= params::TemplateParameters attrs::Attributes n::Name dcls::StructI
       templateDef(
         n.name,
         typeTemplateItem(
-          n.location, params.names, params.kinds,
+          params.names, params.kinds,
           \ mangledName::Name ->
             decls(
               foldDecl([
@@ -62,9 +60,9 @@ top::Decl ::= params::TemplateParameters attrs::Attributes n::Name dcls::StructI
                     gccAttribute(
                       consAttrib(
                         appliedAttrib(
-                          attribName(name("refId", location=builtin)),
+                          attribName(name("refId")),
                           consExpr(
-                            stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${mangledName.name}\"", location=builtin),
+                            stringLiteral(s"\"edu:umn:cs:melt:exts:ableC:templating:${mangledName.name}\""),
                             nilExpr())),
                         nilAttrib())),
                     nilAttribute()),
@@ -108,7 +106,7 @@ top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
           nilAttribute(),
           structTypeExpr(
             nilQualifier(),
-            structDecl(attrs, justName(n), dcls, location=n.location)))),
+            structDecl(attrs, justName(n), dcls)))),
       filter(
         \ refId::String -> null(lookupRefId(refId, augmentedGlobalEnv)),
         catMaybes(
@@ -127,13 +125,13 @@ top::Decl ::= params::TemplateParameters d::FunctionDecl
     case d of
     | functionDecl(_, _, _, _, n, _, _, _) -> 
         if !top.isTopLevel
-        then [err(n.location, "Template declarations must be global")]
+        then [errFromOrigin(n, "Template declarations must be global")]
         else n.templateRedeclarationCheck ++ params.errors
     | badFunctionDecl(msg) -> msg
     end;
   
   local fwrd::Decl =
-    defsDecl([templateDef(d.name, functionTemplateItem(d.sourceLocation, params.names, params.kinds, d))]);
+    defsDecl([templateDef(d.name, functionTemplateItem(params.names, params.kinds, d))]);
   
   forwards to
     if !null(localErrors)
@@ -213,7 +211,7 @@ synthesized attribute kinds::[Maybe<TypeName>];
 inherited attribute appendedTemplateParameters :: TemplateParameters;
 synthesized attribute appendedTemplateParametersRes :: TemplateParameters;
 
-nonterminal TemplateParameters with pps, names, kinds, count, errors, appendedTemplateParameters, appendedTemplateParametersRes;
+tracked nonterminal TemplateParameters with pps, names, kinds, count, errors, appendedTemplateParameters, appendedTemplateParametersRes;
 flowtype TemplateParameters = decorate {}, pps {}, names {}, kinds {decorate}, errors {decorate}, appendedTemplateParametersRes {appendedTemplateParameters};
 
 propagate errors on TemplateParameters;
@@ -231,7 +229,7 @@ top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
   
   top.errors <-
     if contains(h.name, t.names)
-    then [err(h.location, "Duplicate template parameter " ++ h.name)]
+    then [errFromOrigin(h, "Duplicate template parameter " ++ h.name)]
     else [];
 }
 
@@ -254,7 +252,7 @@ TemplateParameters ::= p1::TemplateParameters p2::TemplateParameters
 
 synthesized attribute kind::Maybe<TypeName>;
 
-nonterminal TemplateParameter with pp, location, name, kind;
+tracked nonterminal TemplateParameter with pp, name, kind;
 flowtype TemplateParameter = decorate {}, pp {}, name {}, kind {decorate};
 
 abstract production typeTemplateParameter

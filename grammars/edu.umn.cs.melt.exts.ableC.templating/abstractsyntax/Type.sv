@@ -15,7 +15,7 @@ top::Type ::= q::Qualifiers n::String args::TemplateArgs resolved::Type
     case resolved of
     -- Don't reproduce previous instantiation errors
     | errorType() -> errorTypeExpr([])
-    | _ -> templateTypedefTypeExpr(q, name(n, location=builtin), args.argNames)
+    | _ -> templateTypedefTypeExpr(q, name(n), args.argNames)
     end;
   top.typeModifierExpr = baseTypeExpr();
   top.canonicalType =
@@ -92,7 +92,7 @@ top::TemplateArg ::= t::Type
   propagate canonicalType;
   top.pp = cat(t.lpp, t.rpp);
   top.mangledName = t.mangledName;
-  top.argName = typeTemplateArgName(typeName(directTypeExpr(t), baseTypeExpr()), location=builtin);
+  top.argName = typeTemplateArgName(typeName(directTypeExpr(t), baseTypeExpr()));
   top.containsErrorType = case t of errorType() -> true | _ -> false end;
   top.substDefs =
     rule on BaseTypeExpr of
@@ -108,12 +108,11 @@ top::TemplateArg ::= n::String
   top.mangledName = n;
   top.argName =
     valueTemplateArgName(
-      declRefExpr(name(n, location=builtin), location=builtin),
-      location=builtin);
+      declRefExpr(name(n)));
   top.containsErrorType = false;
   top.substDefs =
     rule on Name of
-    | name(n1, location=l) when n1 == top.paramName -> name(n, location=l)
+    | name(n1) when n1 == top.paramName -> name(n)
     end;
 }
 
@@ -125,15 +124,14 @@ top::TemplateArg ::= c::Decorated NumericConstant
   top.mangledName = c.mangledName;
   top.argName =
     valueTemplateArgName(
-      realConstant(new(c), location=builtin),
-      location=builtin);
+      realConstant(new(c)));
   top.containsErrorType = false;
   top.substDefs =
     rule on Expr of
-    | directRefExpr(name(n1), location=l) when n1 == top.paramName ->
-      realConstant(new(c), location=l)
-    | declRefExpr(name(n), location=l) when n == top.paramName ->
-      realConstant(new(c), location=l)
+    | directRefExpr(name(n1)) when n1 == top.paramName ->
+      realConstant(new(c))
+    | declRefExpr(name(n)) when n == top.paramName ->
+      realConstant(new(c))
     end;
 }
 
@@ -145,13 +143,12 @@ top::TemplateArg ::= c::String p::CharPrefix
   top.mangledName = substring(indexOf("'", c) + 1, lastIndexOf("'", c), c);
   top.argName =
     valueTemplateArgName(
-      characterConstant(c, p, location=builtin),
-      location=builtin);
+      characterConstant(c, p));
   top.containsErrorType = false;
   top.substDefs =
     rule on Expr of
-    | directRefExpr(name(n1), location=l) when n1 == top.paramName ->
-      characterConstant(c, p, location=l)
+    | directRefExpr(name(n1)) when n1 == top.paramName ->
+      characterConstant(c, p)
     end;
 }
 
@@ -161,7 +158,7 @@ top::TemplateArg ::=
   propagate canonicalType;
   top.pp = pp"/*err*/";
   top.mangledName = "error";
-  top.argName = errorTemplateArgName([], location=builtin);
+  top.argName = errorTemplateArgName([]);
   top.containsErrorType = true;
   top.substDefs = fail();
 }
@@ -170,7 +167,7 @@ function mkTemplatedType
 Type ::= q::Qualifiers n::String args::[TemplateArg] env::Decorated Env
 {
   local result::BaseTypeExpr =
-    templateTypedefTypeExpr(q, name(n, location=builtin), foldTemplateArg(args).argNames);
+    templateTypedefTypeExpr(q, name(n), foldTemplateArg(args).argNames);
   result.env = env;
   result.controlStmtContext = initialControlStmtContext;
   result.givenRefId = nothing();

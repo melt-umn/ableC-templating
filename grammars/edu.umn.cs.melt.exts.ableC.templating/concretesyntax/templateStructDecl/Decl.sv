@@ -25,7 +25,7 @@ action {
   context = addIdentsToScope([d.declaredIdent], TemplateTypeName_t, context);
 }
 
-nonterminal TemplateInitialStructDeclaration_c with ast<(ast:Decl ::= ast:StructItemList)>, declaredIdent, location;
+tracked nonterminal TemplateInitialStructDeclaration_c with ast<(ast:Decl ::= ast:StructItemList)>, declaredIdent;
 
 concrete production templateInitialStructDeclaration_c
 top::TemplateInitialStructDeclaration_c ::=

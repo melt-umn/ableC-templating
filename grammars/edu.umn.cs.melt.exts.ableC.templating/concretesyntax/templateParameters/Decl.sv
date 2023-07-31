@@ -21,9 +21,9 @@ disambiguate TypeName_t, TypenameKwd_t {
 -- Needed to open a scope for the parameters
 terminal OpenScope_t '' action { context = openScope(context); };
 
-closed nonterminal TemplateParameters_c
+closed tracked nonterminal TemplateParameters_c
   layout {LineComment_t, BlockComment_t, Spaces_t, NewLine_t}
-  with location, ast<TemplateParameters>;
+  with ast<TemplateParameters>;
 
 concrete production templateParameters_c
 top::TemplateParameters_c ::= OpenScope_t params::TemplateParams_c
@@ -31,7 +31,7 @@ top::TemplateParameters_c ::= OpenScope_t params::TemplateParams_c
   top.ast = params.ast;
 }
 
-nonterminal TemplateParams_c with location, ast<TemplateParameters>;
+tracked nonterminal TemplateParams_c with ast<TemplateParameters>;
 
 concrete productions top::TemplateParams_c
 | h::TemplateParameter_c ',' t::TemplateParams_c
@@ -41,11 +41,11 @@ concrete productions top::TemplateParams_c
 |
   { top.ast = nilTemplateParameter(); }
 
-closed nonterminal TemplateParameter_c with location, ast<TemplateParameter>;
+closed tracked nonterminal TemplateParameter_c with ast<TemplateParameter>;
 
 concrete productions top::TemplateParameter_c
 | 'typename' id::Identifier_c
-  { top.ast = typeTemplateParameter(id.ast, location=top.location); }
+  { top.ast = typeTemplateParameter(id.ast); }
   action {
     context = addIdentsToScope([id.ast], TypeName_t, context);
   }
@@ -54,8 +54,8 @@ concrete productions top::TemplateParameter_c
     ds.givenQualifiers = ds.typeQualifiers;
     d.givenType = ast:baseTypeExpr();
     local bt :: ast:BaseTypeExpr =
-      ast:figureOutTypeFromSpecifiers(ds.location, ds.typeQualifiers, ds.preTypeSpecifiers, ds.realTypeSpecifiers, ds.mutateTypeSpecifiers);
-    top.ast = valueTemplateParameter(bt, d.declaredIdent, d.ast, location=top.location);
+      ast:figureOutTypeFromSpecifiers(ds.typeQualifiers, ds.preTypeSpecifiers, ds.realTypeSpecifiers, ds.mutateTypeSpecifiers);
+    top.ast = valueTemplateParameter(bt, d.declaredIdent, d.ast);
   }
   action {
     context = addIdentsToScope([d.declaredIdent], Identifier_t, context);
