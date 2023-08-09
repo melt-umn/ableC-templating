@@ -87,6 +87,7 @@ top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
     braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
   propagate env, controlStmtContext;
   
+  dcls.localEnv = emptyEnv();
   dcls.inStruct = true;
   dcls.isLast = true; -- We don't know, but be conservative to avoid errors
   
