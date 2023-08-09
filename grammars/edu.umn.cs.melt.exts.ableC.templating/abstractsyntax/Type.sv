@@ -41,7 +41,7 @@ top::Type ::= q::Qualifiers n::String args::TemplateArgs resolved::Type
 synthesized attribute argNames::TemplateArgNames;
 synthesized attribute containsErrorType::Boolean;
 
-nonterminal TemplateArgs with pps, mangledName, count, argNames, paramNames, canonicalType, containsErrorType, substDefs;
+tracked nonterminal TemplateArgs with pps, mangledName, count, argNames, paramNames, canonicalType, containsErrorType, substDefs;
 
 abstract production consTemplateArg
 top::TemplateArgs ::= h::TemplateArg t::TemplateArgs
@@ -84,7 +84,7 @@ global foldTemplateArg::(TemplateArgs ::= [TemplateArg]) =
 
 synthesized attribute argName::TemplateArgName;
 
-nonterminal TemplateArg with pp, mangledName, argName, paramName, canonicalType, containsErrorType, substDefs;
+tracked nonterminal TemplateArg with pp, mangledName, argName, paramName, canonicalType, containsErrorType, substDefs;
 
 abstract production typeTemplateArg
 top::TemplateArg ::= t::Type
