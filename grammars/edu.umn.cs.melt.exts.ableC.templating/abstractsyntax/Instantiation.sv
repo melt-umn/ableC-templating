@@ -4,6 +4,7 @@ abstract production templateDirectRefExpr
 top::Expr ::= n::Name tas::TemplateArgNames
 {
   top.pp = pp"${n.pp}<${ppImplode(pp", ", tas.pps)}>";
+  n.env = top.env;
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   tas.env = globalEnv(top.env);
@@ -27,6 +28,7 @@ abstract production templateDirectCallExpr
 top::Expr ::= n::Name tas::TemplateArgNames a::Exprs
 {
   top.pp = pp"${n.pp}<${ppImplode(pp", ", tas.pps)}>(${ppImplode(pp", ", a.pps)})";
+  n.env = top.env;
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   tas.env = globalEnv(top.env);
@@ -50,6 +52,7 @@ abstract production templateInferredDirectCallExpr
 top::Expr ::= n::Name a::Exprs
 {
   top.pp = pp"${n.pp}(${ppImplode(pp", ", a.pps)})";
+  propagate env, controlStmtContext;
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   local inferredTemplateArguments::Maybe<TemplateArgs> =
@@ -103,6 +106,7 @@ abstract production templateTypedefTypeExpr
 top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
 {
   top.pp = pp"${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", tas.pps)}>";
+  n.env = top.env;
   
   -- templatedType forwards to resolved (forward.typerep here), so no interference.
   top.typerep = templatedType(q, n.name, tas.argreps, forward.typerep);
@@ -156,6 +160,7 @@ abstract production templateExprInstDecl
 top::Decl ::= n::Name tas::TemplateArgs
 {
   top.pp = pp"inst ${n.pp}<${ppImplode(pp", ", tas.pps)}>;";
+  propagate env;
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   
@@ -212,6 +217,7 @@ abstract production templateTypeExprInstDecl
 top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
 {
   top.pp = pp"inst ${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", tas.pps)}>;";
+  propagate env;
   
   local templateItem::Decorated TemplateItem = n.templateItem;
   
@@ -273,7 +279,7 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
 }
 
 
-autocopy attribute substEnv::Strategy;
+inherited attribute substEnv::Strategy;
 synthesized attribute substDefs::Strategy;
 
 inherited attribute paramNames::[String];
@@ -282,13 +288,13 @@ synthesized attribute argreps::TemplateArgs;
 
 inherited attribute arguments::TemplateArgs;
 
-autocopy attribute appendedTemplateArgNames :: TemplateArgNames;
+inherited attribute appendedTemplateArgNames :: TemplateArgNames;
 synthesized attribute appendedTemplateArgNamesRes :: TemplateArgNames;
 
 nonterminal TemplateArgNames with pps, env, substEnv, paramNames, paramKinds, argreps, count, errors, decls, defs, substDefs, arguments, inferredArgs, appendedTemplateArgNames, appendedTemplateArgNamesRes;
 flowtype TemplateArgNames = decorate {env, substEnv, paramNames, paramKinds}, pps {}, count {}, argreps {decorate}, errors {decorate}, defs {decorate}, substDefs {decorate}, inferredArgs {decorate, arguments}, appendedTemplateArgNamesRes {appendedTemplateArgNames};
 
-propagate errors, decls, defs, inferredArgs on TemplateArgNames;
+propagate errors, decls, defs, inferredArgs, appendedTemplateArgNames on TemplateArgNames;
 
 abstract production consTemplateArgName
 top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
@@ -302,7 +308,9 @@ top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
   
   local ta::TemplateArg = h.argrep;
   
+  h.env = top.env;
   t.env = addEnv(h.defs, h.env);
+  h.substEnv = top.substEnv;
   t.substEnv = ta.substDefs <+ h.substEnv;
   ta.paramName =
     case top.paramNames of
@@ -361,6 +369,8 @@ inherited attribute argument::TemplateArg;
 
 nonterminal TemplateArgName with pp, env, substEnv, paramKind, argrep, errors, decls, defs, argument, inferredArgs, location;
 flowtype TemplateArgName = decorate {env, substEnv, paramKind}, pp {}, argrep {decorate}, errors {decorate}, defs {decorate}, inferredArgs {decorate, argument};
+
+propagate env on TemplateArgName;
 
 abstract production typeTemplateArgName
 top::TemplateArgName ::= ty::TypeName

@@ -17,6 +17,7 @@ abstract production templateTypeDecl
 top::Decl ::= params::TemplateParameters n::Name ty::TypeName
 {
   top.pp = pp"using ${n.pp}<${ppImplode(text(", "), params.pps)}> = ${ty.pp};";
+  propagate env, controlStmtContext;
   
   local localErrors::[Message] =
     if !top.isTopLevel
@@ -39,6 +40,7 @@ top::Decl ::= params::TemplateParameters attrs::Attributes n::Name dcls::StructI
     pp"template<", ppImplode(text(", "), params.pps), pp">", line(),
     pp"struct ", ppAttributes(attrs), text(n.name), space(),
     braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
+  propagate env, controlStmtContext;
   
   local localErrors::[Message] =
     if !top.isTopLevel
@@ -85,7 +87,9 @@ top::Decl ::= attrs::Attributes n::Name dcls::StructItemList
   top.pp = ppConcat([
     pp"deferred struct ", ppAttributes(attrs), text(n.name), space(),
     braces(nestlines(2, terminate(cat(semi(),line()), dcls.pps))), semi()]);
+  propagate env, controlStmtContext;
   
+  dcls.localEnv = emptyEnv();
   dcls.inStruct = true;
   dcls.isLast = true; -- We don't know, but be conservative to avoid errors
   
@@ -118,6 +122,7 @@ abstract production templateFunctionDecl
 top::Decl ::= params::TemplateParameters d::FunctionDecl
 {
   top.pp = ppConcat([pp"template<", ppImplode(text(", "), params.pps), pp">", line(), d.pp]);
+  propagate env, controlStmtContext;
   
   local localErrors::[Message] =
     case d of
@@ -141,6 +146,7 @@ abstract production instFunctionDeclaration
 top::Decl ::= mangledName::Name decl::FunctionDecl
 {
   top.pp = pp"inst_decl ${decl.pp}";
+  propagate env, controlStmtContext;
   
   decl.givenMangledName = mangledName;
   forwards to decl.instFunctionDecl;
@@ -205,7 +211,7 @@ Parameters ::= p::Decorated Parameters
 
 synthesized attribute kinds::[Maybe<TypeName>];
 
-autocopy attribute appendedTemplateParameters :: TemplateParameters;
+inherited attribute appendedTemplateParameters :: TemplateParameters;
 synthesized attribute appendedTemplateParametersRes :: TemplateParameters;
 
 nonterminal TemplateParameters with pps, names, kinds, count, errors, appendedTemplateParameters, appendedTemplateParametersRes;
@@ -220,6 +226,8 @@ top::TemplateParameters ::= h::TemplateParameter t::TemplateParameters
   top.names = h.name :: t.names;
   top.kinds = h.kind :: t.kinds;
   top.count = t.count + 1;
+
+  t.appendedTemplateParameters = top.appendedTemplateParameters;
   top.appendedTemplateParametersRes = consTemplateParameter(h, t.appendedTemplateParametersRes);
   
   top.errors <-
