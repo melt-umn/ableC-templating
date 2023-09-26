@@ -129,7 +129,7 @@ top::Def ::=
 abstract production templateDef
 top::Def ::= s::String  t::TemplateItem
 {
-  top.templateContribs = [pair(s, t)];
+  top.templateContribs = [(s, t)];
 }
 
 function lookupTemplate

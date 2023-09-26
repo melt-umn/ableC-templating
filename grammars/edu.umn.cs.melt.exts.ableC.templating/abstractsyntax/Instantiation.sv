@@ -435,7 +435,7 @@ top::TemplateArgName ::= e::Expr
   top.defs := if null(top.errors) then ty.defs else [];
   top.inferredArgs :=
     case e of
-    | declRefExpr(n) -> [pair(n.name, top.argument)]
+    | declRefExpr(n) -> [(n.name, top.argument)]
     | _ -> []
     end;
 }
