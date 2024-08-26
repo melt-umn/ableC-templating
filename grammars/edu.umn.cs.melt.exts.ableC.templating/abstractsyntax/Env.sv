@@ -4,7 +4,7 @@ synthesized attribute templateParams::[String];
 synthesized attribute decl::(Decl ::= Name);
 synthesized attribute isItemError::Boolean;
 
-closed tracked nonterminal TemplateItem with templateParams, kinds, decl, maybeParameters, isItemValue, isItemType, isItemError;
+closed tracked data nonterminal TemplateItem with templateParams, kinds, decl, maybeParameters, isItemValue, isItemType, isItemError;
 
 aspect default production
 top::TemplateItem ::=
@@ -73,33 +73,33 @@ top::TemplateItem ::=
 synthesized attribute templates::Scopes<TemplateItem> occurs on Env;
 synthesized attribute templateContribs::Contribs<TemplateItem> occurs on Defs, Def;
 
-aspect production emptyEnv_i
+aspect production emptyEnv
 top::Env ::=
 {
   top.templates = emptyScope();
 }
-aspect production addEnv_i
-top::Env ::= d::Defs  e::Decorated Env
+aspect production addDefsEnv
+top::Env ::= d::Defs  e::Env
 {
   top.templates = addGlobalScope(gd.templateContribs, addScope(d.templateContribs, e.templates));
 }
-aspect production openScopeEnv_i
-top::Env ::= e::Decorated Env
+aspect production openScopeEnv
+top::Env ::= e::Env
 {
   top.templates = openScope(e.templates);
 }
-aspect production globalEnv_i
-top::Env ::= e::Decorated Env
+aspect production globalEnv
+top::Env ::= e::Env
 {
   top.templates = globalScope(e.templates);
 }
-aspect production nonGlobalEnv_i
-top::Env ::= e::Decorated Env
+aspect production nonGlobalEnv
+top::Env ::= e::Env
 {
   top.templates = nonGlobalScope(e.templates);
 }
-aspect production functionEnv_i
-top::Env ::= e::Decorated Env
+aspect production functionEnv
+top::Env ::= e::Env
 {
   top.templates = functionScope(e.templates);
 }
@@ -128,12 +128,12 @@ top::Def ::= s::String  t::TemplateItem
 }
 
 function lookupTemplate
-[TemplateItem] ::= n::String  e::Decorated Env
+[TemplateItem] ::= n::String  e::Env
 {
   return lookupScope(n, e.templates);
 }
 
-synthesized attribute templateItem::Decorated TemplateItem occurs on Name;
+synthesized attribute templateItem::TemplateItem occurs on Name;
 synthesized attribute templateLookupCheck::[Message] occurs on Name;
 synthesized attribute templateRedeclarationCheck::[Message] occurs on Name;
 

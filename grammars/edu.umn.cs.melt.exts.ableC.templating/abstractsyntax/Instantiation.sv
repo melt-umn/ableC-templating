@@ -6,21 +6,21 @@ top::Expr ::= n::Name tas::TemplateArgNames
   top.pp = pp"${n.pp}<${ppImplode(pp", ", tas.pps)}>";
   n.env = top.env;
   
-  local templateItem::Decorated TemplateItem = n.templateItem;
-  tas.env = globalEnv(top.env);
+  local templateItem::TemplateItem = n.templateItem;
   tas.substEnv = fail();
   tas.paramNames = templateItem.templateParams;
   tas.paramKinds = templateItem.kinds;
   
   forwards to
     injectGlobalDeclsExpr(
-      foldDecl(
-        (if null(n.templateLookupCheck) && !null(tas.errors)
-         then [warnDecl(tas.errors)]
-         else []) ++
-        tas.decls ++
-        [templateExprInstDecl(n, tas.argreps)]),
-      directRefExpr(name(templateMangledName(n.name, tas.argreps))));
+      consDecl(
+        decls(@tas.argDecls),
+        foldDecl(
+          (if null(n.templateLookupCheck) && !null(tas.errors)
+          then [warnDecl(tas.errors)]
+          else []) ++
+          [templateExprInstDecl(^n, tas.argreps)])),
+      directRefExpr(name(tas.argreps.templateMangledName(n.name))));
 }
 
 abstract production templateDirectCallExpr
@@ -29,34 +29,35 @@ top::Expr ::= n::Name tas::TemplateArgNames a::Exprs
   top.pp = pp"${n.pp}<${ppImplode(pp", ", tas.pps)}>(${ppImplode(pp", ", a.pps)})";
   n.env = top.env;
   
-  local templateItem::Decorated TemplateItem = n.templateItem;
-  tas.env = globalEnv(top.env);
+  local templateItem::TemplateItem = n.templateItem;
   tas.substEnv = fail();
   tas.paramNames = templateItem.templateParams;
   tas.paramKinds = templateItem.kinds;
   
   forwards to
     injectGlobalDeclsExpr(
-      foldDecl(
-        (if null(n.templateLookupCheck) && !null(tas.errors)
-         then [warnDecl(tas.errors)]
-         else []) ++
-        tas.decls ++
-        [templateExprInstDecl(n, tas.argreps)]),
-      directCallExpr(name(templateMangledName(n.name, tas.argreps)), a));
+      consDecl(
+        decls(@tas.argDecls),
+        foldDecl(
+          (if null(n.templateLookupCheck) && !null(tas.errors)
+          then [warnDecl(tas.errors)]
+          else []) ++
+          [templateExprInstDecl(^n, tas.argreps)])),
+      directCallExpr(name(tas.argreps.templateMangledName(n.name)), @a));
 }
 
 abstract production templateInferredDirectCallExpr
 top::Expr ::= n::Name a::Exprs
 {
   top.pp = pp"${n.pp}(${ppImplode(pp", ", a.pps)})";
+
   propagate env, controlStmtContext;
   
-  local templateItem::Decorated TemplateItem = n.templateItem;
+  local templateItem::TemplateItem = n.templateItem;
   local inferredTemplateArguments::Maybe<TemplateArgs> =
     do {
       params::Parameters <- templateItem.maybeParameters;
-      let inferredArgs::[Pair<String TemplateArg>] =
+      let inferredArgs::[(String, TemplateArg)] =
         decorate params with {
           env = top.env;
           controlStmtContext = top.controlStmtContext;
@@ -77,21 +78,24 @@ top::Expr ::= n::Name a::Exprs
   local localErrors::[Message] =
     if !null(directErrors)
     then directErrors
-    else if !inferredTemplateArguments.isJust || inferredTemplateArguments.fromJust.containsErrorType
-    then
-      [errFromOrigin(top, s"Template argument inference failed for ${n.name}(${implode(", ", map(showType, a.typereps))})")]
-    else [];
+    else
+      case inferredTemplateArguments of
+      | just(ta) when !ta.containsErrorType -> []
+      | _ -> [errFromOrigin(top, s"Template arguments could not be inferred for ${n.name}(${implode(", ", map(show(80, _), a.typereps))})")]
+      end;
   
-  local mangledName::String = templateMangledName(n.name, inferredTemplateArguments.fromJust);
+  local mangledName::String = inferredTemplateArguments.fromJust.templateMangledName(n.name);
   
-  local fwrd::Expr =
+  nondecorated local fwrd::Expr =
     injectGlobalDeclsExpr(
-      foldDecl([templateExprInstDecl(n, inferredTemplateArguments.fromJust)]),
+      foldDecl([templateExprInstDecl(^n, inferredTemplateArguments.fromJust)]),
       directCallExpr(
         name(mangledName),
-        -- TODO: Avoid re-decorating any element of a that doesn't lift global decls also defined
-        -- in this instantiation.
-        a));
+        -- We can't share a here, because it needs env to compute types that are
+        -- used to infer template arguments, and a.env is affected by defs from
+        -- the instantiated declaration.
+        -- TODO: Can we restructure things to avoid this?
+        ^a));
   
   forwards to mkErrorCheck(localErrors, fwrd);
 }
@@ -103,7 +107,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
   n.env = top.env;
   
   -- templatedType forwards to resolved (forward.typerep here), so no interference.
-  top.typerep = templatedType(q, n.name, tas.argreps, forward.typerep);
+  top.typerep = templatedType(^q, n.name, tas.argreps, forward.typerep);
   
   -- Better template parameter inference, non-interfering since it's not an error if
   -- we try to infer on the forward instead.
@@ -115,14 +119,14 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
     end;
   tas.arguments =
     case top.argumentType of
-    | templatedType(_, n1, args, _) -> if n.name == n1 then args else nilTemplateArg()
+    | templatedType(_, n1, args, _) -> if n.name == n1 then ^args else nilTemplateArg()
     | _ -> nilTemplateArg()
     end;
   -- Also try inferring on the transformation, if this is a templated type definition
-  local templateItem::Decorated TemplateItem = n.templateItem;
+  local templateItem::TemplateItem = n.templateItem;
   local forwardTypeName::TypeName =
     rewriteWith(
-      topDownSubs(tas.substDefs),
+      allTopDown(tas.substDefs),
       case templateItem of
       | templateTypeTemplateItem(_, _, ty) -> new(ty)
       | _ -> error("Not a template type")
@@ -135,19 +139,19 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
     | templateTypeTemplateItem(_, _, _) -> forwardTypeName.inferredArgs
     | _ -> []
     end;
-  
-  tas.env = globalEnv(top.env);
+
   tas.substEnv = fail();
   tas.paramNames = templateItem.templateParams;
   tas.paramKinds = templateItem.kinds;
   
   forwards to
     injectGlobalDeclsTypeExpr(
-      foldDecl(
-        (if !null(tas.errors) then [warnDecl(tas.errors)] else []) ++
-        tas.decls ++
-        [templateTypeExprInstDecl(q, n, tas.argreps)]),
-      typedefTypeExpr(q, name(templateMangledName(n.name, tas.argreps))));
+      consDecl(
+        decls(@tas.argDecls),
+        foldDecl(
+          (if !null(tas.errors) then [warnDecl(tas.errors)] else []) ++
+          [templateTypeExprInstDecl(^q, ^n, tas.argreps)])),
+      typedefTypeExpr(^q, name(tas.argreps.templateMangledName(n.name))));
 }
 
 abstract production templateExprInstDecl
@@ -156,7 +160,7 @@ top::Decl ::= n::Name tas::TemplateArgs
   top.pp = pp"inst ${n.pp}<${ppImplode(pp", ", tas.pps)}>;";
   propagate env;
   
-  local templateItem::Decorated TemplateItem = n.templateItem;
+  local templateItem::TemplateItem = n.templateItem;
   
   local localErrors::[Message] =
     if !null(n.templateLookupCheck)
@@ -176,18 +180,15 @@ top::Decl ::= n::Name tas::TemplateArgs
   
   tas.paramNames = templateItem.templateParams;
   
-  local mangledName::String = templateMangledName(n.name, tas);
+  local mangledName::String = tas.templateMangledName(n.name);
   
-  local fwrd::Decl =
+  forward fwrd =
     if !null(lookupValue(mangledName, top.env))
     then decls(nilDecl())
     else
       rewriteWith(
-        topDownSubs(tas.substDefs),
+        allTopDown(tas.substDefs),
         templateItem.decl(name(mangledName))).fromJust;
-  fwrd.isTopLevel = true;
-  fwrd.env = top.env;
-  fwrd.controlStmtContext = initialControlStmtContext;
   
   forwards to
     if templateItem.isItemError || tas.containsErrorType || !null(localErrors)
@@ -202,7 +203,7 @@ top::Decl ::= n::Name tas::TemplateArgs
             nilAttribute(),
             nothingInitializer()),
           nilDeclarator()))
-    else decDecl(fwrd);
+    else @fwrd;
 }
 
 abstract production templateTypeExprInstDecl
@@ -211,7 +212,7 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
   top.pp = pp"inst ${terminate(space(), q.pps)}${n.pp}<${ppImplode(pp", ", tas.pps)}>;";
   propagate env;
   
-  local templateItem::Decorated TemplateItem = n.templateItem;
+  local templateItem::TemplateItem = n.templateItem;
   
   local localErrors::[Message] =
     if !null(n.templateLookupCheck)
@@ -229,17 +230,17 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
          fwrd.errors)]
     else [];
   
-  local mangledName::String = templateMangledName(n.name, tas);
-  local mangledRefId::String = templateMangledRefId(n.name, tas);
+  local mangledName::String = tas.templateMangledName(n.name);
+  local mangledRefId::String = tas.templateMangledRefId(n.name);
   
   tas.paramNames = templateItem.templateParams;
   
-  local fwrd::Decl =
+  forward fwrd =
     if !null(lookupValue(mangledName, top.env))
     then decls(nilDecl())
     else
       rewriteWith(
-        topDownSubs(
+        allTopDown(
           rule on Attrib of
           | appliedAttrib(attribName(name("refId")), consExpr(stringLiteral(s), nilExpr()))
             when s == s"\"edu:umn:cs:melt:exts:ableC:templating:${n.name}\"" ->
@@ -248,9 +249,6 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
                 consExpr(stringLiteral(s"\"${mangledRefId}\""), nilExpr()))
           end <+ tas.substDefs),
           templateItem.decl(name(mangledName))).fromJust;
-  fwrd.isTopLevel = true;
-  fwrd.env = top.env;
-  fwrd.controlStmtContext = initialControlStmtContext;
   
   forwards to
     if templateItem.isItemError || tas.containsErrorType || !null(localErrors)
@@ -265,9 +263,11 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
             nilAttribute(),
             nothingInitializer()),
           nilDeclarator()))
-    else decDecl(fwrd);
+    else @fwrd;
 }
 
+
+translation attribute argDecls::Decls;
 
 inherited attribute substEnv::Strategy;
 synthesized attribute substDefs::Strategy;
@@ -281,10 +281,10 @@ inherited attribute arguments::TemplateArgs;
 inherited attribute appendedTemplateArgNames :: TemplateArgNames;
 synthesized attribute appendedTemplateArgNamesRes :: TemplateArgNames;
 
-tracked nonterminal TemplateArgNames with pps, env, substEnv, paramNames, paramKinds, argreps, count, errors, decls, defs, substDefs, arguments, inferredArgs, appendedTemplateArgNames, appendedTemplateArgNamesRes;
-flowtype TemplateArgNames = decorate {env, substEnv, paramNames, paramKinds}, pps {}, count {}, argreps {decorate}, errors {decorate}, defs {decorate}, substDefs {decorate}, inferredArgs {decorate, arguments}, appendedTemplateArgNamesRes {appendedTemplateArgNames};
+tracked nonterminal TemplateArgNames with pps, substEnv, paramNames, paramKinds, argreps, count, errors, argDecls, substDefs, arguments, inferredArgs, appendedTemplateArgNames, appendedTemplateArgNamesRes;
+flowtype TemplateArgNames = decorate {argDecls.env, argDecls.controlStmtContext, argDecls.isTopLevel, substEnv, paramNames, paramKinds}, pps {}, count {}, argreps {decorate}, errors {decorate}, substDefs {decorate}, inferredArgs {decorate, arguments}, appendedTemplateArgNamesRes {appendedTemplateArgNames};
 
-propagate errors, decls, defs, inferredArgs, appendedTemplateArgNames on TemplateArgNames;
+propagate errors, inferredArgs, appendedTemplateArgNames on TemplateArgNames;
 
 abstract production consTemplateArgName
 top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
@@ -292,14 +292,12 @@ top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
   top.pps = h.pp :: t.pps;
   top.argreps = consTemplateArg(h.argrep, t.argreps);
   top.count = 1 + t.count;
+  top.argDecls = appendDecls(@h.argDecls, @t.argDecls);
   top.substDefs =
     (if !null(top.paramNames) then ta.substDefs else fail()) <+ t.substDefs;
-  top.appendedTemplateArgNamesRes = consTemplateArgName(h, t.appendedTemplateArgNamesRes);
+  top.appendedTemplateArgNamesRes = consTemplateArgName(^h, t.appendedTemplateArgNamesRes);
   
   local ta::TemplateArg = h.argrep;
-  
-  h.env = top.env;
-  t.env = addEnv(h.defs, h.env);
   h.substEnv = top.substEnv;
   t.substEnv = ta.substDefs <+ h.substEnv;
   ta.paramName =
@@ -324,12 +322,12 @@ top::TemplateArgNames ::= h::TemplateArgName t::TemplateArgNames
     end;
   h.argument =
     case top.arguments of
-    | consTemplateArg(h, _) -> h
+    | consTemplateArg(h, _) -> ^h
     | nilTemplateArg() -> errorTemplateArg()
     end;
   t.arguments =
     case top.arguments of
-    | consTemplateArg(_, t) -> t
+    | consTemplateArg(_, t) -> ^t
     | nilTemplateArg() -> nilTemplateArg()
     end;
 }
@@ -340,6 +338,7 @@ top::TemplateArgNames ::=
   top.pps = [];
   top.argreps = nilTemplateArg();
   top.count = 0;
+  top.argDecls = nilDecl();
   top.substDefs = fail();
   top.appendedTemplateArgNamesRes = top.appendedTemplateArgNames;
 }
@@ -347,7 +346,7 @@ top::TemplateArgNames ::=
 function appendTemplateArgNames
 TemplateArgNames ::= p1::TemplateArgNames p2::TemplateArgNames
 {
-  p1.appendedTemplateArgNames = p2;
+  p1.appendedTemplateArgNames = ^p2;
   return p1.appendedTemplateArgNamesRes;
 }
 
@@ -357,18 +356,16 @@ synthesized attribute argrep::TemplateArg;
 
 inherited attribute argument::TemplateArg;
 
-tracked nonterminal TemplateArgName with pp, env, substEnv, paramKind, argrep, errors, decls, defs, argument, inferredArgs;
-flowtype TemplateArgName = decorate {env, substEnv, paramKind}, pp {}, argrep {decorate}, errors {decorate}, defs {decorate}, inferredArgs {decorate, argument};
-
-propagate env on TemplateArgName;
+tracked nonterminal TemplateArgName with pp, substEnv, paramKind, argrep, errors, argDecls, argument, inferredArgs;
+flowtype TemplateArgName = decorate {argDecls.env, argDecls.controlStmtContext, substEnv, paramKind}, pp {}, argrep {decorate}, errors {decorate}, inferredArgs {decorate, argument};
 
 abstract production typeTemplateArgName
 top::TemplateArgName ::= ty::TypeName
 {
-  propagate errors, decls, defs;
   top.pp = ty.pp;
   top.argrep = typeTemplateArg(ty.typerep);
-  top.errors <-
+  top.argDecls = consDecl(typePreDecls(@ty), nilDecl());
+  top.errors :=
     case top.paramKind of
     | just(_) -> [errFromOrigin(top, "Template value parameter given type argument")]
     | nothing() -> []
@@ -377,7 +374,7 @@ top::TemplateArgName ::= ty::TypeName
   ty.controlStmtContext = initialControlStmtContext;
   ty.argumentType =
     case top.argument of
-    | typeTemplateArg(t) -> t
+    | typeTemplateArg(t) -> ^t
     | _ -> error("argumentType demanded when argument is not a typeTemplateArg")
     end;
   top.inferredArgs :=
@@ -395,9 +392,10 @@ top::TemplateArgName ::= e::Expr
     case e of
     | declRefExpr(n) -> nameTemplateArg(n.name)
     | realConstant(c) -> realConstTemplateArg(c)
-    | characterConstant(c, p) -> characterConstTemplateArg(c, p)
+    | characterConstant(c, p) -> characterConstTemplateArg(c, ^p)
     | _ -> errorTemplateArg()
     end;
+  top.argDecls = consDecl(typePreDecls(@ty), nilDecl());
   top.errors := e.errors;
   top.errors <-
     case e of
@@ -406,23 +404,23 @@ top::TemplateArgName ::= e::Expr
     | characterConstant(c, p) -> []
     | _ -> [errFromOrigin(e, s"Invalid template argument expression: ${show(80, e.pp)}")]
     end;
-  
+
+  e.env = ty.env;
   e.controlStmtContext = initialControlStmtContext;
   
-  local ty::TypeName = rewriteWith(topDownSubs(top.substEnv), top.paramKind.fromJust).fromJust;
-  ty.env = top.env;
-  ty.controlStmtContext = initialControlStmtContext;
+  production ty::TypeName =
+    rewriteWith(
+      allTopDown(top.substEnv),
+      fromMaybe(typeName(errorTypeExpr([]), baseTypeExpr()), top.paramKind)).fromJust;
   top.errors <-
     case top.paramKind of
     | just(_) ->
       ty.errors ++
       if typeAssignableTo(ty.typerep, e.typerep)
       then []
-      else [errFromOrigin(top, s"Template value parameter expected ${showType(ty.typerep)} but got ${showType(e.typerep)}")]
+      else [errFromOrigin(top, s"Template value parameter expected ${show(80, ty.typerep)} but got ${show(80, e.typerep)}")]
     | nothing() -> [errFromOrigin(top, "Template type parameter given value argument")]
     end;
-  top.decls := if null(top.errors) then ty.decls else [];
-  top.defs := if null(top.errors) then ty.defs else [];
   top.inferredArgs :=
     case e of
     | declRefExpr(n) -> [(n.name, top.argument)]
@@ -433,20 +431,9 @@ top::TemplateArgName ::= e::Expr
 abstract production errorTemplateArgName
 top::TemplateArgName ::= msg::[Message]
 {
-  propagate decls, defs, inferredArgs;
+  propagate inferredArgs;
   top.pp = pp"/*err*/";
   top.argrep = errorTemplateArg();
+  top.argDecls = nilDecl();
   top.errors := msg;
-}
-
-function templateMangledName
-String ::= n::String params::TemplateArgs
-{
-  return s"_template_${n}_${params.mangledName}";
-}
-
-function templateMangledRefId
-String ::= n::String params::TemplateArgs
-{
-  return s"edu:umn:cs:melt:exts:ableC:templating:${templateMangledName(n, params)}";
 }

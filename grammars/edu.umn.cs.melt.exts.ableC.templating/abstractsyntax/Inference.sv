@@ -67,17 +67,6 @@ top::BaseTypeExpr ::= msg::[Message]  ty::BaseTypeExpr
   ty.argumentType = top.argumentType;
 }
 
-aspect production decTypeExpr
-top::BaseTypeExpr ::= ty::Decorated BaseTypeExpr
-{
-  top.inferredArgs <- newTy.inferredArgs;
-  local newTy::BaseTypeExpr = new(ty);
-  newTy.env = top.env;
-  newTy.controlStmtContext = top.controlStmtContext;
-  newTy.givenRefId = top.givenRefId;
-  newTy.argumentType = top.argumentType;
-}
-
 aspect production defsTypeExpr
 top::BaseTypeExpr ::= d::[Def]  bty::BaseTypeExpr
 {
@@ -103,18 +92,12 @@ top::BaseTypeExpr ::= q::Qualifiers  name::Name
     end;
 }
 
-aspect production attributedTypeExpr
-top::BaseTypeExpr ::= attrs::Attributes  bt::BaseTypeExpr
-{
-  bt.argumentType = top.argumentType;
-}
-
 aspect production atomicTypeExpr
 top::BaseTypeExpr ::= q::Qualifiers  wrapped::TypeName
 {
   wrapped.argumentType =
     case top.argumentType of
-    | atomicType(_, t) -> t
+    | atomicType(_, t) -> ^t
     | _ -> errorType()
     end;
 }
@@ -138,26 +121,13 @@ top::TypeModifierExpr ::= bty::BaseTypeExpr
   bty.argumentType = top.argumentType;
 }
 
-aspect production decTypeModifierExpr
-top::TypeModifierExpr ::= ty::Decorated TypeModifierExpr
-{
-  top.inferredArgs <- newTy.inferredArgs;
-  top.argumentBaseType = newTy.argumentBaseType;
-  local newTy::TypeModifierExpr = new(ty);
-  newTy.env = top.env;
-  newTy.controlStmtContext = top.controlStmtContext;
-  newTy.baseType = top.baseType;
-  newTy.typeModifierIn = top.typeModifierIn;
-  newTy.argumentType = top.argumentType;
-}
-
 aspect production pointerTypeExpr
 top::TypeModifierExpr ::= q::Qualifiers  target::TypeModifierExpr
 {
   top.argumentBaseType = target.argumentBaseType;
   target.argumentType =
     case top.argumentType.defaultFunctionArrayLvalueConversion of
-    | pointerType(_, t) -> t
+    | pointerType(_, t) -> ^t
     | _ -> errorType()
     end;
 }
@@ -168,7 +138,7 @@ top::TypeModifierExpr ::= element::TypeModifierExpr  indexQualifiers::Qualifiers
   top.argumentBaseType = element.argumentBaseType;
   element.argumentType =
     case top.argumentType.defaultFunctionArrayLvalueConversion of
-    | pointerType(_, t) -> t
+    | pointerType(_, t) -> ^t
     | _ -> errorType()
     end;
 }
@@ -179,7 +149,7 @@ top::TypeModifierExpr ::= element::TypeModifierExpr  indexQualifiers::Qualifiers
   top.argumentBaseType = element.argumentBaseType;
   element.argumentType =
     case top.argumentType.defaultFunctionArrayLvalueConversion of
-    | pointerType(_, t) -> t
+    | pointerType(_, t) -> ^t
     | _ -> errorType()
     end;
 }
@@ -190,7 +160,7 @@ top::TypeModifierExpr ::= result::TypeModifierExpr  args::Parameters  variadic::
   top.argumentBaseType = result.argumentBaseType;
   result.argumentType =
     case top.argumentType of
-    | functionType(t, _, _) -> t
+    | functionType(t, _, _) -> ^t
     | _ -> errorType()
     end;
   args.argumentTypes =
@@ -206,7 +176,7 @@ top::TypeModifierExpr ::= result::TypeModifierExpr  ids::[Name]  q::Qualifiers
   top.argumentBaseType = result.argumentBaseType;
   result.argumentType =
     case top.argumentType of
-    | functionType(t, _, _) -> t
+    | functionType(t, _, _) -> ^t
     | _ -> errorType()
     end;
 }

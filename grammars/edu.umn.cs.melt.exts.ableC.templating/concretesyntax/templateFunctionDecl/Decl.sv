@@ -35,15 +35,15 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       d.givenType = ast:baseTypeExpr();
       l.givenQualifiers = 
         case baseMT of
-        | ast:functionTypeExprWithArgs(t, p, v, q) -> q
-        | ast:functionTypeExprWithoutArgs(t, v, q) -> q
+        | ast:functionTypeExprWithArgs(t, p, v, q) -> ^q
+        | ast:functionTypeExprWithoutArgs(t, v, q) -> ^q
         | _ -> ast:nilQualifier()
         end;
 
-      local specialSpecifiers :: ast:SpecialSpecifiers =
+      nondecorated local specialSpecifiers :: ast:SpecialSpecifiers =
         foldr(ast:consSpecialSpecifier, ast:nilSpecialSpecifier(), ds.specialSpecifiers);
       
-      local bt :: ast:BaseTypeExpr =
+      nondecorated local bt :: ast:BaseTypeExpr =
         ast:figureOutTypeFromSpecifiers(ds.typeQualifiers, ds.preTypeSpecifiers, ds.realTypeSpecifiers, ds.mutateTypeSpecifiers);
       
       -- If this is a K&R-style declaration, attatch any function qualifiers to the first declaration instead
@@ -52,13 +52,13 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       baseMT.ast:typeModifierIn = ast:baseTypeExpr();
       baseMT.ast:env = ast:emptyEnv();
       baseMT.ast:controlStmtContext = ast:initialControlStmtContext;
-      local mt :: ast:TypeModifierExpr =
+      nondecorated local mt :: ast:TypeModifierExpr =
         case l.isDeclListEmpty, baseMT of
         | false, ast:functionTypeExprWithArgs(t, p, v, q) ->
-          ast:functionTypeExprWithArgs(t, p, v, ast:nilQualifier())
+          ast:functionTypeExprWithArgs(^t, ^p, v, ast:nilQualifier())
         | false, ast:functionTypeExprWithoutArgs(t, v, q) ->
-          ast:functionTypeExprWithoutArgs(t, v, ast:nilQualifier())
-        | _, mt -> mt
+          ast:functionTypeExprWithoutArgs(^t, v, ast:nilQualifier())
+        | _, mt -> ^mt
         end;
 
       top.ast = 
@@ -75,12 +75,12 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       d.givenType = ast:baseTypeExpr();
       l.givenQualifiers = 
         case baseMT of
-        | ast:functionTypeExprWithArgs(t, p, v, q) -> q
-        | ast:functionTypeExprWithoutArgs(t, v, q) -> q
+        | ast:functionTypeExprWithArgs(t, p, v, q) -> ^q
+        | ast:functionTypeExprWithoutArgs(t, v, q) -> ^q
         | _ -> ast:nilQualifier()
         end;
       
-      local bt :: ast:BaseTypeExpr =
+      nondecorated local bt :: ast:BaseTypeExpr =
         ast:figureOutTypeFromSpecifiers(ast:nilQualifier(), [], [], []);
       
       -- If this is a K&R-style declaration, attatch any function qualifiers to the first declaration instead
@@ -89,13 +89,13 @@ concrete productions top::TemplateInitialFunctionDefinition_c
       baseMT.ast:typeModifierIn = ast:baseTypeExpr();
       baseMT.ast:env = ast:emptyEnv();
       baseMT.ast:controlStmtContext = ast:initialControlStmtContext;
-      local mt :: ast:TypeModifierExpr =
+      nondecorated local mt :: ast:TypeModifierExpr =
         case l.isDeclListEmpty, baseMT of
         | false, ast:functionTypeExprWithArgs(t, p, v, q) ->
-          ast:functionTypeExprWithArgs(t, p, v, ast:nilQualifier())
+          ast:functionTypeExprWithArgs(^t, ^p, v, ast:nilQualifier())
         | false, ast:functionTypeExprWithoutArgs(t, v, q) ->
-          ast:functionTypeExprWithoutArgs(t, v, ast:nilQualifier())
-        | _, mt -> mt
+          ast:functionTypeExprWithoutArgs(^t, v, ast:nilQualifier())
+        | _, mt -> ^mt
         end;
 
       top.declaredIdent = d.declaredIdent;

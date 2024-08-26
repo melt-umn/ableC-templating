@@ -53,7 +53,7 @@ concrete productions top::TemplateParameter_c
   {
     ds.givenQualifiers = ds.typeQualifiers;
     d.givenType = ast:baseTypeExpr();
-    local bt :: ast:BaseTypeExpr =
+    nondecorated local bt :: ast:BaseTypeExpr =
       ast:figureOutTypeFromSpecifiers(ds.typeQualifiers, ds.preTypeSpecifiers, ds.realTypeSpecifiers, ds.mutateTypeSpecifiers);
     top.ast = valueTemplateParameter(bt, d.declaredIdent, d.ast);
   }

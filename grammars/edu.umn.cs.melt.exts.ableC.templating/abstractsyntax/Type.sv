@@ -15,27 +15,25 @@ top::Type ::= q::Qualifiers n::String args::TemplateArgs resolved::Type
     case resolved of
     -- Don't reproduce previous instantiation errors
     | errorType() -> errorTypeExpr([])
-    | _ -> templateTypedefTypeExpr(q, name(n), args.argNames)
+    | _ -> templateTypedefTypeExpr(^q, name(n), args.argNames)
     end;
   top.typeModifierExpr = baseTypeExpr();
   top.canonicalType =
-    templatedType(q, n, args.canonicalType, resolved.canonicalType);
+    templatedType(^q, n, args.canonicalType, resolved.canonicalType);
   top.withoutTypeQualifiers =
-    templatedType(nilQualifier(), n, args, resolved.withoutTypeQualifiers);
+    templatedType(nilQualifier(), n, ^args, resolved.withoutTypeQualifiers);
   top.withoutExtensionQualifiers =
-    templatedType(filterExtensionQualifiers(q), n, args, resolved.withoutExtensionQualifiers);
+    templatedType(filterExtensionQualifiers(^q), n, ^args, resolved.withoutExtensionQualifiers);
   top.withTypeQualifiers =
-    templatedType(foldQualifier(top.addedTypeQualifiers ++ q.qualifiers), n, args, resolved.withTypeQualifiers);
+    templatedType(foldQualifier(top.addedTypeQualifiers ++ q.qualifiers), n, ^args, resolved.withTypeQualifiers);
   top.mergeQualifiers = \t2::Type ->
     case t2 of
     | templatedType(q2, _, _, resolved2) ->
-      templatedType(unionQualifiers(top.qualifiers, q2.qualifiers), n, args, resolved.mergeQualifiers(t2))
+      templatedType(unionQualifiers(top.qualifiers, q2.qualifiers), n, ^args, resolved.mergeQualifiers(t2))
     | _ -> resolved.mergeQualifiers(t2)
     end;
   
-  resolved.addedTypeQualifiers = top.addedTypeQualifiers;
-  
-  forwards to resolved;
+  forwards to @resolved;
 }
 
 synthesized attribute argNames::TemplateArgNames;
@@ -92,11 +90,11 @@ top::TemplateArg ::= t::Type
   propagate canonicalType;
   top.pp = cat(t.lpp, t.rpp);
   top.mangledName = t.mangledName;
-  top.argName = typeTemplateArgName(typeName(directTypeExpr(t), baseTypeExpr()));
+  top.argName = typeTemplateArgName(typeName(directTypeExpr(^t), baseTypeExpr()));
   top.containsErrorType = case t of errorType() -> true | _ -> false end;
   top.substDefs =
     rule on BaseTypeExpr of
-    | typedefTypeExpr(_, name(n)) when n == top.paramName -> directTypeExpr(t)
+    | typedefTypeExpr(_, name(n)) when n == top.paramName -> directTypeExpr(^t)
     end;
 }
 
@@ -122,9 +120,7 @@ top::TemplateArg ::= c::Decorated NumericConstant
   propagate canonicalType;
   top.pp = c.pp;
   top.mangledName = c.mangledName;
-  top.argName =
-    valueTemplateArgName(
-      realConstant(new(c)));
+  top.argName = valueTemplateArgName(realConstant(new(c)));
   top.containsErrorType = false;
   top.substDefs =
     rule on Expr of
@@ -141,14 +137,12 @@ top::TemplateArg ::= c::String p::CharPrefix
   propagate canonicalType;
   top.pp = text(c);
   top.mangledName = substring(indexOf("'", c) + 1, lastIndexOf("'", c), c);
-  top.argName =
-    valueTemplateArgName(
-      characterConstant(c, p));
+  top.argName = valueTemplateArgName(characterConstant(c, ^p));
   top.containsErrorType = false;
   top.substDefs =
     rule on Expr of
     | directRefExpr(name(n1)) when n1 == top.paramName ->
-      characterConstant(c, p)
+      characterConstant(c, ^p)
     end;
 }
 
@@ -163,11 +157,20 @@ top::TemplateArg ::=
   top.substDefs = fail();
 }
 
+synthesized attribute templateMangledName::(String ::= String) occurs on TemplateArgs;
+synthesized attribute templateMangledRefId::(String ::= String) occurs on TemplateArgs;
+aspect default production
+top::TemplateArgs ::=
+{
+  top.templateMangledName = \ n -> s"_template_${n}_${top.mangledName}";
+  top.templateMangledRefId = \ n -> s"edu:umn:cs:melt:exts:ableC:templating:${top.templateMangledName(n)}";
+}
+
 function mkTemplatedType
-Type ::= q::Qualifiers n::String args::[TemplateArg] env::Decorated Env
+Type ::= q::Qualifiers n::String args::[TemplateArg] env::Env
 {
   local result::BaseTypeExpr =
-    templateTypedefTypeExpr(q, name(n), foldTemplateArg(args).argNames);
+    templateTypedefTypeExpr(^q, name(n), foldTemplateArg(args).argNames);
   result.env = env;
   result.controlStmtContext = initialControlStmtContext;
   result.givenRefId = nothing();

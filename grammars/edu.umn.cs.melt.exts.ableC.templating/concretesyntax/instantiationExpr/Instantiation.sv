@@ -3,7 +3,6 @@ grammar edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationExpr;
 imports silver:langutil only ast;
 
 imports edu:umn:cs:melt:ableC:abstractsyntax:host;
-imports edu:umn:cs:melt:ableC:abstractsyntax:overloadable as ovrld;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction;
 imports edu:umn:cs:melt:ableC:concretesyntax;
 

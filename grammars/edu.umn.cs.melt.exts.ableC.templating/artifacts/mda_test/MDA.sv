@@ -1,4 +1,4 @@
-grammar determinism;
+grammar edu:umn:cs:melt:exts:ableC:templating:artifacts:mda_test;
 
 {- This Silver specification does not generate a useful working 
    compiler, it only serves as a grammar for running the modular
@@ -6,7 +6,6 @@ grammar determinism;
  -}
 
 import edu:umn:cs:melt:ableC:host;
-import edu:umn:cs:melt:ableC:concretesyntax;
 
 copper_mda testTemplateStructDecl(ablecParser) {
   edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructDecl;
@@ -35,7 +34,7 @@ copper_mda testInstExpr(ablecParser) {
 copper_mda testInstTypeExpr(ablecParser) {
   edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeExpr;
 }
-
+{-
 parser ableCWithTemplates :: Root {
   edu:umn:cs:melt:ableC:concretesyntax;
   edu:umn:cs:melt:exts:ableC:templating:concretesyntax;
@@ -49,3 +48,4 @@ copper_mda testSilverConstruction(ableCWithTemplates) {
   silver:compiler:modification:list;
   silver:compiler:modification:let_fix;
 }
+-}
