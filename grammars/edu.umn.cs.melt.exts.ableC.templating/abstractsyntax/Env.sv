@@ -39,13 +39,15 @@ top::TemplateItem ::= params::[String] kinds::[Maybe<TypeName>] ty::TypeName
   top.templateParams = params;
   top.kinds = kinds;
   top.decl =
-    \ mangledName::Name ->
+    case ty of
+    | typeName(bty, mty) -> \ mangledName::Name ->
       typedefDecls(
         nilAttribute(),
-        ty.bty,
+        ^bty,
         consDeclarator(
-          declarator(mangledName, ty.mty, nilAttribute(), nothingInitializer()),
-          nilDeclarator()));
+          declarator(mangledName, ^mty, nilAttribute(), nothingInitializer()),
+          nilDeclarator()))
+    end;
   top.isItemType = true;
 }
 

@@ -73,11 +73,10 @@ top::BaseTypeExpr ::= d::[Def]  bty::BaseTypeExpr
   bty.argumentType = top.argumentType;
 }
 
-aspect production typeModifierTypeExpr
-top::BaseTypeExpr ::= bty::BaseTypeExpr  mty::TypeModifierExpr
+aspect production typeNameTypeExpr
+top::BaseTypeExpr ::= ty::TypeName
 {
-  bty.argumentType = mty.argumentBaseType;
-  mty.argumentType = top.argumentType;
+  ty.argumentType = top.argumentType;
 }
 
 aspect production typedefTypeExpr
