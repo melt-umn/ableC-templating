@@ -19,7 +19,7 @@ top::Declaration_c ::= 'template' '<' params::TemplateParameters_c '>' ds::Decla
   ds.givenQualifiers = ds.typeQualifiers;
   
   local bt :: ast:BaseTypeExpr =
-    ast:figureOutTypeFromSpecifiers(ds.location, ds.typeQualifiers, ds.preTypeSpecifiers, ds.realTypeSpecifiers, ds.mutateTypeSpecifiers);
+    ast:figureOutTypeFromSpecifiers(ds.typeQualifiers, ds.preTypeSpecifiers, ds.realTypeSpecifiers, ds.mutateTypeSpecifiers);
   local dcls :: ast:Declarators =
     ast:foldDeclarator(idcl.ast);
   

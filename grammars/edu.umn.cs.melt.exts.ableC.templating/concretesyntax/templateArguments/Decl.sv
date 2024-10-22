@@ -9,9 +9,9 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:construction as ast;
 
 imports edu:umn:cs:melt:exts:ableC:templating:abstractsyntax;
 
-closed nonterminal TemplateArguments_c
+closed tracked nonterminal TemplateArguments_c
   layout {LineComment_t, BlockComment_t, Spaces_t, NewLine_t}
-  with location, ast<TemplateArgNames>;
+  with ast<TemplateArgNames>;
 
 concrete productions top::TemplateArguments_c
 | h::TemplateArgument_c ',' t::TemplateArguments_c
@@ -21,12 +21,12 @@ concrete productions top::TemplateArguments_c
 |
   { top.ast = nilTemplateArgName(); }
 
-closed nonterminal TemplateArgument_c with location, ast<TemplateArgName>;
+closed tracked nonterminal TemplateArgument_c with ast<TemplateArgName>;
 
 concrete productions top::TemplateArgument_c
 | ty::TypeName_c
-  { top.ast = typeTemplateArgName(ty.ast, location=top.location); }
+  { top.ast = typeTemplateArgName(ty.ast); }
 | id::Identifier_c
-  { top.ast = valueTemplateArgName(ast:declRefExpr(id.ast, location=id.location), location=top.location); }
+  { top.ast = valueTemplateArgName(ast:declRefExpr(id.ast)); }
 | c::Constant_c
-  { top.ast = valueTemplateArgName(c.ast, location=top.location); }
+  { top.ast = valueTemplateArgName(c.ast); }

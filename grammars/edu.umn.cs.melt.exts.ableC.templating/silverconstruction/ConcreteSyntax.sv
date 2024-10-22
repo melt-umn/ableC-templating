@@ -10,9 +10,9 @@ marking terminal AntiquoteTemplateArgNames_t   '$TemplateArgNames'   lexer class
 concrete productions top::TemplateParameter_c
 | '$TemplateParameters' silver:compiler:definition:core:LCurly_t e::Expr silver:compiler:definition:core:RCurly_t
   layout {silver:compiler:definition:core:WhiteSpace, BlockComments, Comments}
-  { top.ast = antiquoteTemplateParameters(e, location=top.location); }
+  { top.ast = antiquoteTemplateParameters(e); }
 
 concrete productions top::TemplateArgument_c
 | '$TemplateArgNames' silver:compiler:definition:core:LCurly_t e::Expr silver:compiler:definition:core:RCurly_t
   layout {silver:compiler:definition:core:WhiteSpace, BlockComments, Comments}
-  { top.ast = antiquoteTemplateArgNames(e, location=top.location); }
+  { top.ast = antiquoteTemplateArgNames(e); }

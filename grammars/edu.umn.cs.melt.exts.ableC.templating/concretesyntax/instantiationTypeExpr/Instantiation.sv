@@ -16,7 +16,7 @@ marking terminal TemplateTypeName_t /[A-Za-z_\$][A-Za-z_0-9\$]*/ lexer classes {
 concrete productions top::TypeSpecifier_c
 | ty::TemplateTypeName_t '<' args::TemplateArguments_c '>'
   {
-    top.realTypeSpecifiers = [templateTypedefTypeExpr(top.givenQualifiers, name(ty.lexeme, location=ty.location), args.ast)];
+    top.realTypeSpecifiers = [templateTypedefTypeExpr(top.givenQualifiers, name(ty.lexeme), args.ast)];
     top.preTypeSpecifiers = [];
   }
 -- For use in silver-ableC

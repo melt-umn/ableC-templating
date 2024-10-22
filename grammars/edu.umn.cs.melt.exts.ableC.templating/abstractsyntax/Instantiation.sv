@@ -20,8 +20,7 @@ top::Expr ::= n::Name tas::TemplateArgNames
          else []) ++
         tas.decls ++
         [templateExprInstDecl(n, tas.argreps)]),
-      directRefExpr(name(templateMangledName(n.name, tas.argreps), location=top.location), location=top.location),
-      location=top.location);
+      directRefExpr(name(templateMangledName(n.name, tas.argreps))));
 }
 
 abstract production templateDirectCallExpr
@@ -44,8 +43,7 @@ top::Expr ::= n::Name tas::TemplateArgNames a::Exprs
          else []) ++
         tas.decls ++
         [templateExprInstDecl(n, tas.argreps)]),
-      directCallExpr(name(templateMangledName(n.name, tas.argreps), location=top.location), a, location=top.location),
-      location=top.location);
+      directCallExpr(name(templateMangledName(n.name, tas.argreps)), a));
 }
 
 abstract production templateInferredDirectCallExpr
@@ -73,7 +71,7 @@ top::Expr ::= n::Name a::Exprs
     (if !null(n.templateLookupCheck)
      then n.templateLookupCheck
      else if !templateItem.isItemValue
-     then [err(n.location, s"${n.name} is not a value")]
+     then [errFromOrigin(n, s"${n.name} is not a value")]
      else []) ++
     a.errors;
   local localErrors::[Message] =
@@ -81,9 +79,7 @@ top::Expr ::= n::Name a::Exprs
     then directErrors
     else if !inferredTemplateArguments.isJust || inferredTemplateArguments.fromJust.containsErrorType
     then
-      [err(
-         top.location,
-         s"Template argument inference failed for ${n.name}(${implode(", ", map(showType, a.typereps))})")]
+      [errFromOrigin(top, s"Template argument inference failed for ${n.name}(${implode(", ", map(showType, a.typereps))})")]
     else [];
   
   local mangledName::String = templateMangledName(n.name, inferredTemplateArguments.fromJust);
@@ -92,12 +88,10 @@ top::Expr ::= n::Name a::Exprs
     injectGlobalDeclsExpr(
       foldDecl([templateExprInstDecl(n, inferredTemplateArguments.fromJust)]),
       directCallExpr(
-        name(mangledName, location=top.location),
+        name(mangledName),
         -- TODO: Avoid re-decorating any element of a that doesn't lift global decls also defined
         -- in this instantiation.
-        a,
-        location=top.location),
-      location=top.location);
+        a));
   
   forwards to mkErrorCheck(localErrors, fwrd);
 }
@@ -130,7 +124,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
     rewriteWith(
       topDownSubs(tas.substDefs),
       case templateItem of
-      | templateTypeTemplateItem(_, _, _, ty) -> new(ty)
+      | templateTypeTemplateItem(_, _, ty) -> new(ty)
       | _ -> error("Not a template type")
       end).fromJust;
   forwardTypeName.env = globalEnv(top.env);
@@ -138,7 +132,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
   forwardTypeName.argumentType = top.argumentType;
   local forwardInferredTypes::[Pair<String TemplateArg>] =
     case templateItem of
-    | templateTypeTemplateItem(_, _, _, _) -> forwardTypeName.inferredArgs
+    | templateTypeTemplateItem(_, _, _) -> forwardTypeName.inferredArgs
     | _ -> []
     end;
   
@@ -153,7 +147,7 @@ top::BaseTypeExpr ::= q::Qualifiers n::Name tas::TemplateArgNames
         (if !null(tas.errors) then [warnDecl(tas.errors)] else []) ++
         tas.decls ++
         [templateTypeExprInstDecl(q, n, tas.argreps)]),
-      typedefTypeExpr(q, name(templateMangledName(n.name, tas.argreps), location=builtin)));
+      typedefTypeExpr(q, name(templateMangledName(n.name, tas.argreps))));
 }
 
 abstract production templateExprInstDecl
@@ -168,16 +162,14 @@ top::Decl ::= n::Name tas::TemplateArgs
     if !null(n.templateLookupCheck)
     then n.templateLookupCheck
     else if !templateItem.isItemValue
-    then [err(n.location, s"${n.name} is not a value")]
+    then [errFromOrigin(n, s"${n.name} is not a value")]
     else if !templateItem.isItemError && tas.count != length(templateItem.templateParams)
-    then [err(
-            n.location,
-            s"Wrong number of template arguments for ${n.name}, " ++
+    then [errFromOrigin(n, s"Wrong number of template arguments for ${n.name}, " ++
             s"expected ${toString(length(templateItem.templateParams))} but got ${toString(tas.count)}")]
     else if !tas.containsErrorType && !null(fwrd.errors)
     then
       [nested(
-         n.location,
+         getParsedOriginLocationOrFallback(n),
          s"In instantiation ${n.name}<${show(80, ppImplode(pp", ", tas.pps))}>",
          fwrd.errors)]
     else [];
@@ -192,7 +184,7 @@ top::Decl ::= n::Name tas::TemplateArgs
     else
       rewriteWith(
         topDownSubs(tas.substDefs),
-        templateItem.decl(name(mangledName, location=builtin))).fromJust;
+        templateItem.decl(name(mangledName))).fromJust;
   fwrd.isTopLevel = true;
   fwrd.env = top.env;
   fwrd.controlStmtContext = initialControlStmtContext;
@@ -205,7 +197,7 @@ top::Decl ::= n::Name tas::TemplateArgs
         errorTypeExpr(localErrors),
         consDeclarator(
           declarator(
-            name(mangledName, location=builtin),
+            name(mangledName),
             baseTypeExpr(),
             nilAttribute(),
             nothingInitializer()),
@@ -225,16 +217,14 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
     if !null(n.templateLookupCheck)
     then n.templateLookupCheck
     else if !templateItem.isItemType
-    then [err(n.location, s"${n.name} is not a type")]
+    then [errFromOrigin(n, s"${n.name} is not a type")]
     else if !templateItem.isItemError && tas.count != length(templateItem.templateParams)
-    then [err(
-            n.location,
-            s"Wrong number of template arguments for ${n.name}, " ++
+    then [errFromOrigin(n, s"Wrong number of template arguments for ${n.name}, " ++
             s"expected ${toString(length(templateItem.templateParams))} but got ${toString(tas.count)}")]
     else if !tas.containsErrorType && !null(fwrd.errors)
     then
       [nested(
-         n.location,
+         getParsedOriginLocationOrFallback(n),
          s"In instantiation ${n.name}<${show(80, ppImplode(pp", ", tas.pps))}>",
          fwrd.errors)]
     else [];
@@ -254,10 +244,10 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
           | appliedAttrib(attribName(name("refId")), consExpr(stringLiteral(s), nilExpr()))
             when s == s"\"edu:umn:cs:melt:exts:ableC:templating:${n.name}\"" ->
               appliedAttrib(
-                attribName(name("refId", location=builtin)),
-                consExpr(stringLiteral(s"\"${mangledRefId}\"", location=builtin), nilExpr()))
+                attribName(name("refId")),
+                consExpr(stringLiteral(s"\"${mangledRefId}\""), nilExpr()))
           end <+ tas.substDefs),
-          templateItem.decl(name(mangledName, location=builtin))).fromJust;
+          templateItem.decl(name(mangledName))).fromJust;
   fwrd.isTopLevel = true;
   fwrd.env = top.env;
   fwrd.controlStmtContext = initialControlStmtContext;
@@ -270,7 +260,7 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
         errorTypeExpr(localErrors),
         consDeclarator(
           declarator(
-            name(mangledName, location=builtin),
+            name(mangledName),
             baseTypeExpr(),
             nilAttribute(),
             nothingInitializer()),
@@ -291,7 +281,7 @@ inherited attribute arguments::TemplateArgs;
 inherited attribute appendedTemplateArgNames :: TemplateArgNames;
 synthesized attribute appendedTemplateArgNamesRes :: TemplateArgNames;
 
-nonterminal TemplateArgNames with pps, env, substEnv, paramNames, paramKinds, argreps, count, errors, decls, defs, substDefs, arguments, inferredArgs, appendedTemplateArgNames, appendedTemplateArgNamesRes;
+tracked nonterminal TemplateArgNames with pps, env, substEnv, paramNames, paramKinds, argreps, count, errors, decls, defs, substDefs, arguments, inferredArgs, appendedTemplateArgNames, appendedTemplateArgNamesRes;
 flowtype TemplateArgNames = decorate {env, substEnv, paramNames, paramKinds}, pps {}, count {}, argreps {decorate}, errors {decorate}, defs {decorate}, substDefs {decorate}, inferredArgs {decorate, arguments}, appendedTemplateArgNamesRes {appendedTemplateArgNames};
 
 propagate errors, decls, defs, inferredArgs, appendedTemplateArgNames on TemplateArgNames;
@@ -367,7 +357,7 @@ synthesized attribute argrep::TemplateArg;
 
 inherited attribute argument::TemplateArg;
 
-nonterminal TemplateArgName with pp, env, substEnv, paramKind, argrep, errors, decls, defs, argument, inferredArgs, location;
+tracked nonterminal TemplateArgName with pp, env, substEnv, paramKind, argrep, errors, decls, defs, argument, inferredArgs;
 flowtype TemplateArgName = decorate {env, substEnv, paramKind}, pp {}, argrep {decorate}, errors {decorate}, defs {decorate}, inferredArgs {decorate, argument};
 
 propagate env on TemplateArgName;
@@ -380,7 +370,7 @@ top::TemplateArgName ::= ty::TypeName
   top.argrep = typeTemplateArg(ty.typerep);
   top.errors <-
     case top.paramKind of
-    | just(_) -> [err(top.location, "Template value parameter given type argument")]
+    | just(_) -> [errFromOrigin(top, "Template value parameter given type argument")]
     | nothing() -> []
     end;
   
@@ -414,7 +404,7 @@ top::TemplateArgName ::= e::Expr
     | declRefExpr(n) -> []
     | realConstant(c) -> []
     | characterConstant(c, p) -> []
-    | _ -> [err(e.location, s"Invalid template argument expression: ${show(80, e.pp)}")]
+    | _ -> [errFromOrigin(e, s"Invalid template argument expression: ${show(80, e.pp)}")]
     end;
   
   e.controlStmtContext = initialControlStmtContext;
@@ -428,8 +418,8 @@ top::TemplateArgName ::= e::Expr
       ty.errors ++
       if typeAssignableTo(ty.typerep, e.typerep)
       then []
-      else [err(top.location, s"Template value parameter expected ${showType(ty.typerep)} but got ${showType(e.typerep)}")]
-    | nothing() -> [err(top.location, "Template type parameter given value argument")]
+      else [errFromOrigin(top, s"Template value parameter expected ${showType(ty.typerep)} but got ${showType(e.typerep)}")]
+    | nothing() -> [errFromOrigin(top, "Template type parameter given value argument")]
     end;
   top.decls := if null(top.errors) then ty.decls else [];
   top.defs := if null(top.errors) then ty.defs else [];
