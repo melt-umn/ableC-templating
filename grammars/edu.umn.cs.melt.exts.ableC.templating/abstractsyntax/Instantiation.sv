@@ -51,7 +51,7 @@ top::Expr ::= n::Name a::Exprs
 {
   top.pp = pp"${n.pp}(${ppImplode(pp", ", a.pps)})";
 
-  propagate env, controlStmtContext;
+  n.env = top.env;
   
   local templateItem::TemplateItem = n.templateItem;
   local inferredTemplateArguments::Maybe<TemplateArgs> =
@@ -86,18 +86,13 @@ top::Expr ::= n::Name a::Exprs
   
   local mangledName::String = inferredTemplateArguments.fromJust.templateMangledName(n.name);
   
-  nondecorated local fwrd::Expr =
+  forward fwrd = letExpr(
+    consDecl(bindExprsDecls(name("a"), @a), nilDecl()),
     injectGlobalDeclsExpr(
       foldDecl([templateExprInstDecl(^n, inferredTemplateArguments.fromJust)]),
-      directCallExpr(
-        name(mangledName),
-        -- We can't share a here, because it needs env to compute types that are
-        -- used to infer template arguments, and a.env is affected by defs from
-        -- the instantiated declaration.
-        -- TODO: Can we restructure things to avoid this?
-        ^a));
+      directCallExpr(name(mangledName), foldExpr(a.bindRefExprs))));
   
-  forwards to mkErrorCheck(localErrors, fwrd);
+  forwards to if null(localErrors) then @fwrd else errorExpr(localErrors);
 }
 
 abstract production templateTypedefTypeExpr
