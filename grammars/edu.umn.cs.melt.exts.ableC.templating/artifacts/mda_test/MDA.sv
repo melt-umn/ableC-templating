@@ -6,6 +6,7 @@ grammar edu:umn:cs:melt:exts:ableC:templating:artifacts:mda_test;
  -}
 
 import edu:umn:cs:melt:ableC:host;
+import edu:umn:cs:melt:ableC:concretesyntax;
 
 copper_mda testTemplateStructDecl(ablecParser) {
   edu:umn:cs:melt:exts:ableC:templating:concretesyntax:templateStructDecl;
@@ -34,7 +35,7 @@ copper_mda testInstExpr(ablecParser) {
 copper_mda testInstTypeExpr(ablecParser) {
   edu:umn:cs:melt:exts:ableC:templating:concretesyntax:instantiationTypeExpr;
 }
-{-
+
 parser ableCWithTemplates :: Root {
   edu:umn:cs:melt:ableC:concretesyntax;
   edu:umn:cs:melt:exts:ableC:templating:concretesyntax;
@@ -42,10 +43,9 @@ parser ableCWithTemplates :: Root {
 
 copper_mda testSilverConstruction(ableCWithTemplates) {
   edu:umn:cs:melt:exts:ableC:templating:silverconstruction;
-  edu:umn:cs:melt:exts:silver:ableC:concretesyntax:antiquotation;
+  edu:umn:cs:melt:ableC:silverconstruction:concretesyntax:antiquotation;
   silver:compiler:host:core;
   silver:compiler:extension:patternmatching;
   silver:compiler:modification:list;
   silver:compiler:modification:let_fix;
 }
--}
