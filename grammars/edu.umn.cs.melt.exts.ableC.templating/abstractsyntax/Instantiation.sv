@@ -186,7 +186,7 @@ top::Decl ::= n::Name tas::TemplateArgs
         templateItem.decl(name(mangledName))).fromJust;
   
   forwards to
-    if templateItem.isItemError || tas.containsErrorType || !null(localErrors)
+    if templateItem.isItemError || tas.containsErrorType || containsErrors(localErrors, false)
     then
       variableDecls(
         nilStorageClass(), nilAttribute(),
@@ -246,7 +246,7 @@ top::Decl ::= q::Qualifiers n::Name tas::TemplateArgs
           templateItem.decl(name(mangledName))).fromJust;
   
   forwards to
-    if templateItem.isItemError || tas.containsErrorType || !null(localErrors)
+    if templateItem.isItemError || tas.containsErrorType || containsErrors(localErrors, false)
     then
       typedefDecls(
         nilAttribute(),
